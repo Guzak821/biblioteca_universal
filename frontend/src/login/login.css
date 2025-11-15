@@ -1,0 +1,87 @@
+/* Color de fondo global para replicar el mockup */
+body {
+  background-color: #DEDFDF; /* Este es el color que solicitaste */
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: Arial, sans-serif; /* Puedes cambiar la fuente si lo deseas */
+}
+
+/* Contenedor principal para centrar el cuadro de login */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 20px;
+}
+
+/* Caja de login con fondo blanco y bordes redondeados */
+.login-box {
+  background-color: #ffffff;
+  padding: 40px; /* Espacio interno */
+  border-radius: 20px; /* Bordes redondeados */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  width: 100%;
+  max-width: 400px; /* Ancho máximo para el formulario */
+  text-align: center;
+}
+
+/* Sección del logo */
+.logo-section {
+  margin-bottom: 30px;
+}
+
+.logo {
+  width: 120px; /* Ajusta el tamaño del logo */
+  height: auto;
+}
+
+/* Estilos del formulario */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Espacio entre los grupos de formulario */
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #333;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 10px;
+  border: 1px solid #ccc; /* Borde gris claro */
+  border-radius: 8px; /* Bordes ligeramente redondeados en los inputs */
+  box-sizing: border-box; /* Incluye padding y border en el ancho/alto */
+  font-size: 16px;
+}
+
+.form-group input::placeholder {
+    color: #999;
+}
+
+/* Botón de Iniciar Sesión */
+.login-button {
+  background-color: #4b589b; /* Color similar al del mockup */
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.login-button:hover {
+  background-color: #3e4a7a; /* Oscurecer un poco al pasar el mouse */
+}

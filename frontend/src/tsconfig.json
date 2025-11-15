@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    // Soporte para React
+    "jsx": "react-jsx", 
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    
+    // Configuración base
+    "target": "ES2020",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"], // Necesario para el navegador
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    
+    // Estrictez
+    "strict": true,
+    
+    // Rutas
+    "outDir": "../dist/frontend",
+    "rootDir": "."
+  },
+  "include": [
+    "**/*.ts", 
+    "**/*.tsx", 
+    "**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

@@ -1,0 +1,28 @@
+// tsconfig.json (En la raíz del proyecto)
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx" // Esto es crítico para React/TSX
+  },
+  "include": [
+    "src", 
+    "src/**/*.ts", 
+    "src/**/*.tsx"
+  ]
+}
