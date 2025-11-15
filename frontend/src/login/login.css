@@ -1,13 +1,13 @@
 /* Color de fondo global para replicar el mockup */
 body {
-  background-color: #DEDFDF; /* Este es el color que solicitaste */
+  background-color: #5a5a5a; 
   margin: 0;
   padding: 0;
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  font-family: Arial, sans-serif; /* Puedes cambiar la fuente si lo deseas */
+  font-family: Arial, sans-serif; 
 }
 
 /* Contenedor principal para centrar el cuadro de login */
@@ -25,18 +25,18 @@ body {
   padding: 40px; /* Espacio interno */
   border-radius: 20px; /* Bordes redondeados */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Sombra suave */
-  width: 100%;
+  width: 300%;
   max-width: 400px; /* Ancho máximo para el formulario */
   text-align: center;
 }
 
 /* Sección del logo */
 .logo-section {
-  margin-bottom: 30px;
+  margin-bottom: 10px;
 }
 
 .logo {
-  width: 120px; /* Ajusta el tamaño del logo */
+  width: 170px; /* Ajusta el tamaño del logo */
   height: auto;
 }
 
@@ -72,7 +72,7 @@ body {
 .login-button {
   background-color: #4b589b; /* Color similar al del mockup */
   color: white;
-  padding: 12px 20px;
+  padding: 12px 10px;
   border: none;
   border-radius: 8px;
   cursor: pointer;
