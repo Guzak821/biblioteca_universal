@@ -1,72 +1,76 @@
 // src/pages/Admin/AdminUsers.jsx
 import React, { useState, useEffect } from 'react';
+// IMPORTANTE: Ajustar la ruta si el Controller no está en esta ubicación
 import { UsuarioController } from '../../../../backend/src/controller/UsuarioController'; 
 
-// Instanciar el Controller fuera del componente para evitar recrearlo en cada render
+// --- 1. CONFIGURACIÓN E INSTANCIAS ---
+
+// Instanciar el Controller fuera del componente
 const UsuarioControllerInstance = new UsuarioController();
 
-const UserRegistrationModal = ({ show, onClose, onRegisterSuccess }) => {
-    // 1. Estado para los datos del nuevo usuario
-    const [newUserData, setNewUserData] = useState({
-        usuario: '',
-        contrasena: '',
-        rol: 'Alumno', // Valor inicial por defecto
-    });
+// Modelo de datos para inicializar formularios vacíos
+const EMPTY_USER_DATA = {
+    usuario: '',
+    contrasena: '',
+    rol: 'Alumno', // Por defecto
+};
+
+
+// --- 2. MODAL ÚNICO: UserFormModal (Registro y Edición) ---
+
+// El componente es ahora único y recibe un prop 'user'
+const UserFormModal = ({ show, onClose, user, onSave, isNew }) => {
+    // Inicializa el estado con los datos del usuario (si es edición) o con datos vacíos (si es nuevo)
+    const [formData, setFormData] = useState(user || EMPTY_USER_DATA);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState(null);
+    
+    // El título y el texto del botón dependen de si es nuevo o edición
+    const modalTitle = isNew ? 'Registrar Nuevo Usuario Interno' : `Editar Usuario: ${user.usuario}`;
+    const buttonText = isNew ? 'Registrar' : 'Guardar Cambios';
 
     if (!show) return null;
 
-    // Maneja los cambios en los inputs
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setNewUserData(prev => ({ ...prev, [name]: value }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // 2. Lógica de Registro (Llama al CQRS a través del Controller)
-    const handleRegister = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
 
-        // Validación simple de campos
-        if (!newUserData.usuario || !newUserData.contrasena) {
+        // Validación simple:
+        if (!formData.usuario || !formData.contrasena) {
             setError("Los campos Usuario y Contraseña son obligatorios.");
             return;
         }
 
         setIsSaving(true);
         try {
-            // El flujo MVC -> CQRS -> DAO se ejecuta aquí:
-            // El Controller llama a handleRegisterUser, que a su vez usa el CQRS.
-            const registeredUser = UsuarioControllerInstance.handleRegisterUser(newUserData);
+            // El componente padre (AdminUsers) se encarga de llamar a la lógica CQRS/DAO
+            onSave(formData, isNew); 
             
-            // Si el registro fue exitoso, notificar al componente padre
-            onRegisterSuccess(registeredUser); 
-            
-            // Limpiar formulario y cerrar modal
-            setNewUserData({ usuario: '', contrasena: '', rol: 'Alumno' });
+            // Si todo va bien, cerrar el modal
             onClose();
 
         } catch (err) {
-            console.error("Error al registrar usuario:", err);
-            setError("Error al registrar. Intente de nuevo.");
+            console.error(`Error al ${isNew ? 'registrar' : 'editar'} usuario:`, err);
+            setError(`Error al ${isNew ? 'registrar' : 'editar'}. Intente de nuevo.`);
         } finally {
             setIsSaving(false);
         }
     };
+
     return (
-        // Fondo Oscuro
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex justify-center items-center">
-            {/* Contenedor del Diálogo */}
             <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-auto p-6">
                 
-                {/* Encabezado */}
                 <h3 className="text-2xl font-semibold text-gray-800 mb-6 border-b pb-2">
-                    Registrar Nuevo Usuario Interno
+                    {modalTitle}
                 </h3>
 
-                {/* Formulario */}
-                <form onSubmit={handleRegister} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                     {error && <p className="text-red-500 text-sm">{error}</p>}
                     
                     {/* Campo de Rol */}
@@ -75,7 +79,7 @@ const UserRegistrationModal = ({ show, onClose, onRegisterSuccess }) => {
                         <select
                             id="rol"
                             name="rol"
-                            value={newUserData.rol}
+                            value={formData.rol}
                             onChange={handleChange}
                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             disabled={isSaving}
@@ -92,7 +96,7 @@ const UserRegistrationModal = ({ show, onClose, onRegisterSuccess }) => {
                             type="text"
                             id="usuario"
                             name="usuario"
-                            value={newUserData.usuario}
+                            value={formData.usuario}
                             onChange={handleChange}
                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             placeholder="Ingrese nombre de usuario"
@@ -107,12 +111,13 @@ const UserRegistrationModal = ({ show, onClose, onRegisterSuccess }) => {
                             type="password"
                             id="contrasena"
                             name="contrasena"
-                            value={newUserData.contrasena}
+                            value={formData.contrasena}
                             onChange={handleChange}
                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             placeholder="Ingrese contraseña"
-                            disabled={isSaving}
+                            disabled={isSaving && !isNew} // Si es edición, puedes dejar la contraseña vacía si no se cambia
                         />
+                         {!isNew && <p className="mt-1 text-xs text-gray-500">Deje en blanco para mantener la contraseña actual.</p>}
                     </div>
 
                     {/* Pie de página con botones */}
@@ -127,13 +132,13 @@ const UserRegistrationModal = ({ show, onClose, onRegisterSuccess }) => {
                             Cancelar
                         </button>
                         
-                        {/* Botón Azul de Registrar */}
+                        {/* Botón Azul de Registrar/Editar */}
                         <button
                             type="submit"
                             className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
                             disabled={isSaving}
                         >
-                            {isSaving ? 'Registrando...' : 'Registrar'}
+                            {isSaving ? 'Guardando...' : buttonText}
                         </button>
                     </div>
                 </form>
@@ -141,7 +146,11 @@ const UserRegistrationModal = ({ show, onClose, onRegisterSuccess }) => {
         </div>
     );
 };
-const TablaUsuarios = ({ usuarios, isLoading }) => (
+
+
+// --- 3. COMPONENTE DE TABLA (Extrae props de edición/eliminación) ---
+
+const TablaUsuarios = ({ usuarios, isLoading, onEdit, onDelete }) => (
     <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
         <h3 className="text-xl font-semibold text-gray-700 mb-4">
             Lista de Usuarios Internos
@@ -171,8 +180,18 @@ const TablaUsuarios = ({ usuarios, isLoading }) => (
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.usuario}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.rol}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <button className="text-indigo-600 hover:text-indigo-900 mr-4">Editar</button>
-                                <button className="text-red-600 hover:text-red-900">Eliminar</button>
+                                {/* Botón de Editar */}
+                                <button 
+                                    onClick={() => onEdit(user)} // Llama a la función con el objeto usuario
+                                    className="text-indigo-600 hover:text-indigo-900 mr-4">
+                                    Editar
+                                </button>
+                                {/* Botón de Eliminar */}
+                                <button 
+                                    onClick={() => onDelete(user.id, user.usuario)} // Llama a la función con el ID
+                                    className="text-red-600 hover:text-red-900">
+                                    Eliminar
+                                </button>
                             </td>
                         </tr>
                     ))}
@@ -183,18 +202,21 @@ const TablaUsuarios = ({ usuarios, isLoading }) => (
 );
 
 
+// --- 4. COMPONENTE PRINCIPAL: AdminUsers ---
+
 const AdminUsers = () => {
-    // Estados existentes
     const [usuarios, setUsuarios] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    
-    // NUEVO ESTADO: Controla la visibilidad del modal
     const [showRegisterModal, setShowRegisterModal] = useState(false);
+    
+    // Estados para la EDICIÓN
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [userToEdit, setUserToEdit] = useState(null);
 
     const fetchUsers = async () => {
         setIsLoading(true);
         try {
-            // Llama al Controller (ahora retorna Promesa)
+            // Llama al Controller (asíncrono)
             const listaUsuarios = await UsuarioControllerInstance.handleGetUsers(); 
             setUsuarios(listaUsuarios);
         } catch (error) {
@@ -208,12 +230,44 @@ const AdminUsers = () => {
         fetchUsers();
     }, []);
 
-    // Función para manejar el registro exitoso (actualiza la lista)
-    const handleRegisterSuccess = (newUser) => {
-        // Añade el nuevo usuario a la lista sin recargar todos los datos
-        setUsuarios(prev => [...prev, newUser]);
-        // Podrías mostrar un mensaje de éxito aquí
-        console.log("Usuario registrado con éxito:", newUser);
+    // --- LÓGICA CENTRAL DE REGISTRO/EDICIÓN ---
+    
+    // Función unificada que el Modal llama al hacer Submit
+    const handleSaveUser = (userData, isNew) => {
+        if (isNew) {
+            // Flujo: MVC -> CQRS.registerUser -> DAO
+            const registeredUser = UsuarioControllerInstance.handleRegisterUser(userData);
+            setUsuarios(prev => [...prev, registeredUser]); // Actualizar lista
+        } else {
+             // Flujo: MVC -> CQRS.editUser -> DAO
+            const updatedUser = UsuarioControllerInstance.handleEditUser(userData); 
+            // Actualizar lista en el estado de React
+            setUsuarios(prev => prev.map(u => 
+                u.id === updatedUser.id ? updatedUser : u
+            ));
+        }
+    };
+
+    // Abre el modal de edición con los datos del usuario
+    const handleEditClick = (user) => {
+        setUserToEdit(user);
+        setShowEditModal(true);
+    };
+
+    // Lógica de eliminación (MVC -> CQRS -> DAO)
+    const handleDeleteClick = (userId, userName) => {
+        if (window.confirm(`¿Estás seguro de eliminar al usuario ${userName}? Esta acción es irreversible.`)) {
+            try {
+                // Flujo: MVC -> CQRS.deleteUser -> DAO
+                UsuarioControllerInstance.handleDeleteUser(userId); 
+                
+                // Actualiza la lista en el estado
+                setUsuarios(prev => prev.filter(u => u.id !== userId));
+            } catch (error) {
+                alert("Error al eliminar el usuario.");
+                console.error("Error al eliminar:", error);
+            }
+        }
     };
 
     return (
@@ -225,27 +279,53 @@ const AdminUsers = () => {
                     Gestión de Usuarios
                 </h2>
                 <button 
-                    // CAMBIO: Abre el modal
                     onClick={() => setShowRegisterModal(true)} 
                     className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-150 shadow-md">
                     + Nuevo Usuario
                 </button>
             </div>
 
-            {/* Barra de Búsqueda y Filtros (sin cambios) */}
+            {/* Barra de Búsqueda y Filtros */}
             <div className="bg-white p-4 rounded-lg shadow-md flex space-x-4">
-                {/* ... inputs y selects ... */}
+                <input 
+                    type="text" 
+                    placeholder="Buscar por nombre o email..."
+                    className="flex-1 p-2 border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <select className="p-2 border border-gray-300 rounded">
+                    <option>Todos los roles</option>
+                    <option>Bibliotecario</option>
+                    <option>Alumno</option>
+                </select>
             </div>
             
-            {/* Tabla de Usuarios (sin cambios) */}
-            <TablaUsuarios usuarios={usuarios} isLoading={isLoading} />
+            {/* Tabla de Usuarios */}
+            <TablaUsuarios 
+                usuarios={usuarios} 
+                isLoading={isLoading} 
+                onEdit={handleEditClick} 
+                onDelete={handleDeleteClick} 
+            />
 
-            {/* INTEGRACIÓN DEL MODAL */}
-            <UserRegistrationModal
+            {/* MODAL DE REGISTRO (Usa el formulario genérico) */}
+            <UserFormModal
                 show={showRegisterModal}
                 onClose={() => setShowRegisterModal(false)}
-                onRegisterSuccess={handleRegisterSuccess}
+                user={null} // Es nuevo, no hay datos iniciales
+                onSave={handleSaveUser} // Llama a la lógica de guardado
+                isNew={true}
             />
+
+            {/* MODAL DE EDICIÓN (Usa el formulario genérico) */}
+            {showEditModal && userToEdit && (
+                 <UserFormModal 
+                    show={showEditModal} 
+                    user={userToEdit} // Pasa los datos del usuario a editar
+                    onClose={() => setShowEditModal(false)}
+                    onSave={handleSaveUser} // Llama a la lógica de guardado
+                    isNew={false}
+                 />
+            )}
         </div>
     );
 };
