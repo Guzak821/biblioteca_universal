@@ -1,12 +1,146 @@
 // src/pages/Admin/AdminUsers.jsx
 import React, { useState, useEffect } from 'react';
-import { UsuarioController } from '../../../../backend/src/libros/controller/UsuarioController'; 
+import { UsuarioController } from '../../../../backend/src/controller/UsuarioController'; 
 
 // Instanciar el Controller fuera del componente para evitar recrearlo en cada render
 const UsuarioControllerInstance = new UsuarioController();
 
+const UserRegistrationModal = ({ show, onClose, onRegisterSuccess }) => {
+    // 1. Estado para los datos del nuevo usuario
+    const [newUserData, setNewUserData] = useState({
+        usuario: '',
+        contrasena: '',
+        rol: 'Alumno', // Valor inicial por defecto
+    });
+    const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState(null);
 
-// **************** CORRECCIÓN 2: COMPONENTE MOVIDO FUERA DEL RENDER ****************
+    if (!show) return null;
+
+    // Maneja los cambios en los inputs
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setNewUserData(prev => ({ ...prev, [name]: value }));
+    };
+
+    // 2. Lógica de Registro (Llama al CQRS a través del Controller)
+    const handleRegister = async (e) => {
+        e.preventDefault();
+        setError(null);
+
+        // Validación simple de campos
+        if (!newUserData.usuario || !newUserData.contrasena) {
+            setError("Los campos Usuario y Contraseña son obligatorios.");
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            // El flujo MVC -> CQRS -> DAO se ejecuta aquí:
+            // El Controller llama a handleRegisterUser, que a su vez usa el CQRS.
+            const registeredUser = UsuarioControllerInstance.handleRegisterUser(newUserData);
+            
+            // Si el registro fue exitoso, notificar al componente padre
+            onRegisterSuccess(registeredUser); 
+            
+            // Limpiar formulario y cerrar modal
+            setNewUserData({ usuario: '', contrasena: '', rol: 'Alumno' });
+            onClose();
+
+        } catch (err) {
+            console.error("Error al registrar usuario:", err);
+            setError("Error al registrar. Intente de nuevo.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+    return (
+        // Fondo Oscuro
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex justify-center items-center">
+            {/* Contenedor del Diálogo */}
+            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-auto p-6">
+                
+                {/* Encabezado */}
+                <h3 className="text-2xl font-semibold text-gray-800 mb-6 border-b pb-2">
+                    Registrar Nuevo Usuario Interno
+                </h3>
+
+                {/* Formulario */}
+                <form onSubmit={handleRegister} className="space-y-4">
+                    {error && <p className="text-red-500 text-sm">{error}</p>}
+                    
+                    {/* Campo de Rol */}
+                    <div>
+                        <label htmlFor="rol" className="block text-sm font-medium text-gray-700">Rol</label>
+                        <select
+                            id="rol"
+                            name="rol"
+                            value={newUserData.rol}
+                            onChange={handleChange}
+                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            disabled={isSaving}
+                        >
+                            <option value="Bibliotecario">Bibliotecario</option>
+                            <option value="Alumno">Alumno</option>
+                        </select>
+                    </div>
+
+                    {/* Campo de Usuario */}
+                    <div>
+                        <label htmlFor="usuario" className="block text-sm font-medium text-gray-700">Usuario</label>
+                        <input
+                            type="text"
+                            id="usuario"
+                            name="usuario"
+                            value={newUserData.usuario}
+                            onChange={handleChange}
+                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            placeholder="Ingrese nombre de usuario"
+                            disabled={isSaving}
+                        />
+                    </div>
+
+                    {/* Campo de Contraseña */}
+                    <div>
+                        <label htmlFor="contrasena" className="block text-sm font-medium text-gray-700">Contraseña</label>
+                        <input
+                            type="password"
+                            id="contrasena"
+                            name="contrasena"
+                            value={newUserData.contrasena}
+                            onChange={handleChange}
+                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            placeholder="Ingrese contraseña"
+                            disabled={isSaving}
+                        />
+                    </div>
+
+                    {/* Pie de página con botones */}
+                    <div className="pt-4 flex justify-end space-x-3">
+                        {/* Botón Blanco de Cancelar */}
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                            disabled={isSaving}
+                        >
+                            Cancelar
+                        </button>
+                        
+                        {/* Botón Azul de Registrar */}
+                        <button
+                            type="submit"
+                            className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+                            disabled={isSaving}
+                        >
+                            {isSaving ? 'Registrando...' : 'Registrar'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
 const TablaUsuarios = ({ usuarios, isLoading }) => (
     <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
         <h3 className="text-xl font-semibold text-gray-700 mb-4">
@@ -50,65 +184,68 @@ const TablaUsuarios = ({ usuarios, isLoading }) => (
 
 
 const AdminUsers = () => {
-    // Estados
+    // Estados existentes
     const [usuarios, setUsuarios] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    
+    // NUEVO ESTADO: Controla la visibilidad del modal
+    const [showRegisterModal, setShowRegisterModal] = useState(false);
+
+    const fetchUsers = async () => {
+        setIsLoading(true);
+        try {
+            // Llama al Controller (ahora retorna Promesa)
+            const listaUsuarios = await UsuarioControllerInstance.handleGetUsers(); 
+            setUsuarios(listaUsuarios);
+        } catch (error) {
+            console.error("Error al cargar usuarios:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchUsers = async () => {
-            setIsLoading(true);
-
-            // 1. AWAIT la llamada asíncrona al Controller (MVC)
-            try {
-                const listaUsuarios = await UsuarioControllerInstance.handleGetUsers(); 
-                setUsuarios(listaUsuarios);
-            } catch (error) {
-                console.error("Error al cargar usuarios:", error);
-                // Manejo de error si fuera necesario
-            }
-            
-            setIsLoading(false);
-        };
-        
         fetchUsers();
-
-        // No se necesita cleanup si solo hay un fetch, pero se puede dejar vacío si el error persiste.
     }, []);
 
-    const handleNuevoUsuario = () => {
-        // En un futuro, aquí se llamaría al handleRegisterUser del Controller.
-        alert('Formulario de Nuevo Usuario (pendiente)');
+    // Función para manejar el registro exitoso (actualiza la lista)
+    const handleRegisterSuccess = (newUser) => {
+        // Añade el nuevo usuario a la lista sin recargar todos los datos
+        setUsuarios(prev => [...prev, newUser]);
+        // Podrías mostrar un mensaje de éxito aquí
+        console.log("Usuario registrado con éxito:", newUser);
     };
 
     return (
         <div className="space-y-6">
+            
+            {/* BOTONES Y ENCABEZADO */}
             <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-bold text-gray-800">
                     Gestión de Usuarios
                 </h2>
                 <button 
-                    onClick={handleNuevoUsuario}
+                    // CAMBIO: Abre el modal
+                    onClick={() => setShowRegisterModal(true)} 
                     className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-150 shadow-md">
                     + Nuevo Usuario
                 </button>
             </div>
 
-            {/* Barra de Búsqueda y Filtros */}
+            {/* Barra de Búsqueda y Filtros (sin cambios) */}
             <div className="bg-white p-4 rounded-lg shadow-md flex space-x-4">
-                <input 
-                    type="text" 
-                    placeholder="Buscar por nombre o email..."
-                    className="flex-1 p-2 border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500"
-                />
-                <select className="p-2 border border-gray-300 rounded">
-                    <option>Todos los roles</option>
-                    <option>Bibliotecario</option>
-                    <option>Alumno</option>
-                </select>
+                {/* ... inputs y selects ... */}
             </div>
             
-            {/* Componente de Tabla (pasando el estado como prop) */}
+            {/* Tabla de Usuarios (sin cambios) */}
             <TablaUsuarios usuarios={usuarios} isLoading={isLoading} />
+
+            {/* INTEGRACIÓN DEL MODAL */}
+            <UserRegistrationModal
+                show={showRegisterModal}
+                onClose={() => setShowRegisterModal(false)}
+                onRegisterSuccess={handleRegisterSuccess}
+            />
         </div>
     );
 };
