@@ -8,7 +8,7 @@ const UsuarioLayout = () => {
       <UsuarioHeader />
       
       {/* Contenido dinámico que cambia según la ruta */}
-      <main className="w-full px-8 py-6">
+      <main className="w-full px-80 py-6">
         <Outlet />
       </main>
     </div>

@@ -77,8 +77,8 @@ export class UsuarioController {
       }, 100); // Retraso de 100ms
     });
   }
-  // Aquí irían otros métodos:
-  // - handleGetUsers (Para listar usuarios internos, usa DAO)
-  // - handleRegisterUser (Para registrar usuarios, usa CQRS)
-  // - handleEditUser (Para editar usuarios, usa CQRS)
+  public handleDeleteUser(id: number): boolean {
+    // Llama al CQRS para ejecutar el comando de modificación (eliminación)
+    return this.usuarioCqrs.deleteUser(id);
+  }
 }

@@ -10,11 +10,16 @@ import AdminBooks from '../pages/Admin/Books';
 // Páginas Usuario
 import UsuarioHome from '../pages/usuario/Home';
 import UsuarioBooks from '../pages/usuario/Books';
+import Login from '../../src/pages/login/Login.tsx'
 
 const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Ruta de login */ }
+        <Route path="/login" element={<Login />}>
+        </Route>
+
         {/* Rutas de Admin con layout compartido */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminHome />} />

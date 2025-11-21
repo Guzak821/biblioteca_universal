@@ -72,6 +72,19 @@ export class UsuarioDao {
     }
     return null;
   }
+  public delete(id: number): boolean {
+    // Simula DELETE FROM usuarios WHERE id = id
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const initialLength = mockUsuarios.length;
 
-  // (Podrías añadir un método 'delete' si fuera necesario)
+    // Encuentra el índice
+    const index = mockUsuarios.findIndex((u) => u.id === id);
+
+    if (index !== -1) {
+      // Elimina el elemento del mock
+      mockUsuarios.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
 }

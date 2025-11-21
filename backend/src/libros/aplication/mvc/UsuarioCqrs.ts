@@ -51,4 +51,11 @@ export class UsuarioCqrs {
     // 3. Retorna el resultado.
     return usuarioActualizado;
   }
+  public deleteUser(id: number): boolean {
+    // Esto es un comando (modificación en la BD), por lo que va en CQRS.
+    console.log(`[CQRS] Ejecutando comando: Eliminar usuario ID ${id}`);
+
+    // Llama al DAO de forma interna
+    return this.usuarioDao.delete(id);
+  }
 }

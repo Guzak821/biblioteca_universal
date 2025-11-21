@@ -1,72 +1,78 @@
-// backend/src/libros/domain/dao/LibroDao.ts
-
 import { LibroModel } from '../models/LibroModel';
 
 /**
- * Simulación de los libros en la base de datos interna (ej. UTL).
+ * Simulación de los libros en la base de datos interna (UTL).
+ * (Datos mock para simular la BD)
  */
 const mockLibrosInternos: LibroModel[] = [
   {
     id: 101,
     titulo: 'Álgebra de Baldor',
     generoLiterario: 'Matemáticas',
-    portadaBase64: 'base64_portada_baldor_utl', // Simulación de portada
-    pdfBase64: 'base64_pdf_baldor_utl', // Simulación del PDF completo en base64
-    universidad: 'UTL',
-    universidadPropietaria: '',
+    portadaBase64: 'https://placehold.co/50x70/087990/ffffff?text=PORTADA_B',
+    pdfBase64: 'BASE64_PDF_COMPLETO_UTL_BALDOR', // Mock de PDF
+    universidadPropietaria: 'UTL',
+    universidad: ''
   },
   {
     id: 102,
     titulo: 'Introducción a la Biología',
     generoLiterario: 'Biología',
-    portadaBase64: 'base64_portada_biologia_utl',
-    pdfBase64: 'base64_pdf_biologia_utl',
-    universidad: 'UTL',
-    universidadPropietaria: '',
+    portadaBase64: 'https://placehold.co/50x70/000000/ffffff?text=PORTADA_B',
+    pdfBase64: 'BASE64_PDF_COMPLETO_UTL_BIO',
+    universidadPropietaria: 'UTL',
+    universidad: ''
   },
 ];
 
 /**
- * Clase que maneja todas las consultas a los datos de Libro internos.
- * El nombre del archivo incluye "Dao".
- * Solo debe contener consultas; las modificaciones (CRUD) irían en CQRS.
+ * Clase que maneja todas las consultas y modificaciones a los datos de Libro internos.
+ * ÚNICO lugar donde debe haber lógica de consultas/persistencia a datos.
  */
 export class LibroDao {
-  findAll(): LibroModel[] {
-    throw new Error('Method not implemented.');
+  
+  public findAll(): LibroModel[] {
+    return mockLibrosInternos;
   }
-  /**
-   * Consulta libros internos que coincidan con un término de búsqueda.
-   * Este método será usado por el Controller para la pantalla del Alumno.
-   * @param filtro El término de búsqueda ingresado por el alumno.
-   * @returns Un arreglo de LibroModel.
-   */
+  
   public findLibrosByFiltro(filtro: string): LibroModel[] {
     const filtroLower = filtro.toLowerCase();
-
-    // Simula la consulta SELECT * FROM libros WHERE titulo LIKE '%filtro%'
-    const resultados = mockLibrosInternos.filter(
-      (libro) =>
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-        libro.titulo.toLowerCase().includes(filtroLower) ||
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-        libro.generoLiterario.toLowerCase().includes(filtroLower),
+    
+    return mockLibrosInternos.filter(libro =>
+      libro.titulo.toLowerCase().includes(filtroLower) || 
+      libro.generoLiterario.toLowerCase().includes(filtroLower)
     );
-
-    return resultados;
   }
 
-  /**
-   * Consulta el PDF de un libro interno por su ID.
-   * Este método será usado por el Controller para el flujo de "Ver Libro".
-   * @param id El ID del libro interno.
-   * @returns El LibroModel o null.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   public findLibroById(id: number): LibroModel | null {
-    // Simula la consulta SELECT * FROM libros WHERE id = id
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const libro = mockLibrosInternos.find((libro) => libro.id === id);
+    const libro = mockLibrosInternos.find(libro => libro.id === id);
     return libro ? libro : null;
+  }
+
+  // --- MÉTODOS DE MODIFICACIÓN (Usados por CQRS) ---
+
+  public save(book: Omit<LibroModel, 'id'>): LibroModel {
+    const newId = Math.floor(Math.random() * 1000) + 200;
+    const newBook: LibroModel = { id: newId, ...book };
+    mockLibrosInternos.push(newBook);
+    return newBook;
+  }
+
+  public update(book: LibroModel): LibroModel | null {
+    const index = mockLibrosInternos.findIndex((b) => b.id === book.id);
+    if (index !== -1) {
+      mockLibrosInternos[index] = book;
+      return mockLibrosInternos[index];
+    }
+    return null;
+  }
+
+  public delete(id: number): boolean {
+    const index = mockLibrosInternos.findIndex((b) => b.id === id);
+    if (index !== -1) {
+      mockLibrosInternos.splice(index, 1);
+      return true;
+    }
+    return false;
   }
 }
