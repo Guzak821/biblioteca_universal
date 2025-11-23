@@ -9,7 +9,7 @@ class UsuarioController {
         this.usuarioCqrs = new UsuarioCqrs_1.UsuarioCqrs();
     }
     handleLogin(usuario, contrasena) {
-        const user = this.usuarioDao.findByUserAndPassword(usuario, contrasena);
+        const user = this.usuarioDao.findByUsuario(usuario);
         if (user) {
             console.log(`Login exitoso para el usuario: ${user.usuario} con rol: ${user.rol}`);
             return {

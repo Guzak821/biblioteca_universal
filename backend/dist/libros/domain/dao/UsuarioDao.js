@@ -1,41 +1,23 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UsuarioDao = void 0;
-const mockUsuarios = [
-    { id: 1, usuario: 'admin', contrasena: '1234', rol: 'Bibliotecario' },
-    { id: 2, usuario: 'student1', contrasena: '1234', rol: 'Alumno' },
-    { id: 3, usuario: 'student2', contrasena: '1234', rol: 'Alumno' },
+exports.UsuarioDao = exports.mockUsuarios = void 0;
+const UsuarioModel_1 = require("../models/UsuarioModel");
+exports.mockUsuarios = [
+    new UsuarioModel_1.UsuarioModel(1, 'admin', '1234', 'Bibliotecario'),
+    new UsuarioModel_1.UsuarioModel(2, 'student1', '1234', 'Alumno'),
+    new UsuarioModel_1.UsuarioModel(3, 'student2', '1234', 'Alumno'),
 ];
 class UsuarioDao {
-    findByUserAndPassword(usuario, contrasena) {
-        const user = mockUsuarios.find((u) => u.usuario === usuario && u.contrasena === contrasena);
-        return user ? user : null;
+    findByUsuario(usuario) {
+        const user = exports.mockUsuarios.find((u) => u.usuario === usuario);
+        return user || null;
     }
     findAll() {
-        return mockUsuarios;
+        return exports.mockUsuarios;
     }
-    save(user) {
-        const newId = mockUsuarios.length + 1;
-        const newUser = { id: newId, ...user };
-        mockUsuarios.push(newUser);
-        return newUser;
-    }
-    update(user) {
-        const index = mockUsuarios.findIndex((u) => u.id === user.id);
-        if (index !== -1) {
-            mockUsuarios[index] = user;
-            return mockUsuarios[index];
-        }
-        return null;
-    }
-    delete(id) {
-        const initialLength = mockUsuarios.length;
-        const index = mockUsuarios.findIndex((u) => u.id === id);
-        if (index !== -1) {
-            mockUsuarios.splice(index, 1);
-            return true;
-        }
-        return false;
+    findById(id) {
+        const user = exports.mockUsuarios.find((u) => u.id === id);
+        return user || null;
     }
 }
 exports.UsuarioDao = UsuarioDao;

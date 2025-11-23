@@ -1,61 +1,90 @@
-// backend/src/libros/aplicacion/commands/mvc/UsuarioCqrs.ts
-
-import { UsuarioDao } from '../../domain/dao/UsuarioDao'; // Llama al DAO de forma interna
-import { UsuarioModel } from '../../domain/models/UsuarioModel'; // Necesita el modelo de BD
+import { UsuarioDao, mockUsuarios } from '../../domain/dao/UsuarioDao';
+import { UsuarioModel } from '../../domain/models/UsuarioModel';
 
 /**
- * Clase que maneja los COMANDOS (modificaciones) para el subdominio de Usuarios.
- * Implementa el patrón CQRS (Command Query Responsibility Segregation).
- * El nombre del archivo incluye "Cqrs".
+ * UsuarioCqrs - Patrón CQRS (Command Query Responsibility Segregation)
+ * Maneja SOLO los COMANDOS (modificaciones): INSERT, UPDATE, DELETE
+ * Puede usar el DAO internamente SOLO para validaciones (consultas)
+ * Flujo: MVC > CQRS > DAO (para validar) + Modificaciones directas
  */
 export class UsuarioCqrs {
   private usuarioDao: UsuarioDao;
 
   constructor() {
-    // CQRS realiza el llamado del DAO de forma interna.
+    // CQRS realiza el llamado del DAO de forma interna
     this.usuarioDao = new UsuarioDao();
   }
 
-  // --- COMANDOS (Modificaciones) ---
-
   /**
-   * Registra un nuevo usuario interno.
-   * NO debe tener consultas.
-   * @param user Datos del nuevo usuario (sin ID).
-   * @returns El UsuarioModel registrado.
+   * Comando: Registra un nuevo usuario interno
+   * NO debe tener consultas, solo modificaciones
    */
   public registerUser(user: Omit<UsuarioModel, 'id'>): UsuarioModel {
-    // 1. Aquí se podría poner lógica de negocio previa a guardar (ej. validaciones).
     console.log(`[CQRS] Ejecutando comando: Registrar usuario ${user.usuario}`);
 
-    // 2. Llama al DAO para persistir los datos (la única acción permitida).
-    // Nota: El DAO debe manejar el Modelo original de la BD, no el ViewModel[cite: 125].
-    const nuevoUsuario = this.usuarioDao.save(user);
+    // 1. Validación usando DAO (consulta permitida para validar)
+    const existingUser = this.usuarioDao.findByUsuario(user.usuario);
+    if (existingUser) {
+      throw new Error('El usuario ya existe');
+    }
 
-    // 3. Retorna el resultado (el objeto ya guardado).
+    // 2. Generar nuevo ID
+    const newId =
+      mockUsuarios.length > 0
+        ? Math.max(...mockUsuarios.map((u) => u.id)) + 1
+        : 1;
+
+    // 3. Crear y guardar el nuevo usuario (modificación)
+    const nuevoUsuario = new UsuarioModel(
+      newId,
+      user.usuario,
+      user.contrasena,
+      user.rol,
+    );
+
+    // Modificación directa al mock (simula INSERT INTO)
+    mockUsuarios.push(nuevoUsuario);
+
     return nuevoUsuario;
   }
 
   /**
-   * Edita un usuario interno existente.
-   * @param user Datos del usuario actualizado (incluyendo ID).
-   * @returns El UsuarioModel actualizado o null si no se encontró.
+   * Comando: Edita un usuario interno existente
    */
   public editUser(user: UsuarioModel): UsuarioModel | null {
-    // 1. Aquí se podría poner lógica de negocio previa a actualizar.
     console.log(`[CQRS] Ejecutando comando: Editar usuario ID ${user.id}`);
 
-    // 2. Llama al DAO para actualizar los datos.
-    const usuarioActualizado = this.usuarioDao.update(user);
+    // 1. Buscar el índice del usuario
+    const index = mockUsuarios.findIndex((u) => u.id === user.id);
 
-    // 3. Retorna el resultado.
-    return usuarioActualizado;
+    if (index === -1) {
+      console.log(`[CQRS] Usuario ID ${user.id} no encontrado`);
+      return null;
+    }
+
+    // 2. Actualizar el usuario (simula UPDATE)
+    mockUsuarios[index] = user;
+
+    return mockUsuarios[index];
   }
+
+  /**
+   * Comando: Elimina un usuario
+   */
   public deleteUser(id: number): boolean {
-    // Esto es un comando (modificación en la BD), por lo que va en CQRS.
     console.log(`[CQRS] Ejecutando comando: Eliminar usuario ID ${id}`);
 
-    // Llama al DAO de forma interna
-    return this.usuarioDao.delete(id);
+    // 1. Buscar el índice del usuario
+    const index = mockUsuarios.findIndex((u) => u.id === id);
+
+    if (index === -1) {
+      console.log(`[CQRS] Usuario ID ${id} no encontrado`);
+      return false;
+    }
+
+    // 2. Eliminar el usuario (simula DELETE)
+    mockUsuarios.splice(index, 1);
+
+    return true;
   }
 }

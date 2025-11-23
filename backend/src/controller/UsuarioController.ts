@@ -27,7 +27,7 @@ export class UsuarioController {
     contrasena: string,
   ): { success: boolean; user?: UsuarioModel; message: string } {
     // Desde el controlador, se realiza la validación usando el DAO (Lógica de negocio)[cite: 142].
-    const user = this.usuarioDao.findByUserAndPassword(usuario, contrasena);
+    const user = this.usuarioDao.findByUsuario(usuario);
 
     if (user) {
       console.log(

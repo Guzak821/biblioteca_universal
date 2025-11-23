@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-// RUTA CORREGIDA: Usando la ruta absoluta proporcionada por el usuario.
-import { LibroController } from '/Users/Lenovo/Desktop/VS/proyecto_arquitectura/biblioteca_universal/backend/src/controller/LibroController'; 
 
-// --- 1. CONFIGURACIÓN E INSTANCIAS ---
-
-const LibroControllerInstance = new LibroController();
+// --- CONFIGURACIÓN DE LA API (Asumimos NestJS está en puerto 3000) ---
+const API_BASE_URL = 'http://localhost:3000/libros';
 
 // Modelo de datos para inicializar formularios vacíos
 const EMPTY_BOOK_DATA = {
@@ -36,11 +33,10 @@ const b64toBlob = (b64Data, contentType = '', sliceSize = 512) => {
 
 // Función auxiliar para obtener la URL de visualización de la portada
 const getBookCoverUrl = (base64OrUrl) => {
-    // Si parece una URL, la usamos directamente
     if (base64OrUrl && base64OrUrl.startsWith('http')) {
         return base64OrUrl;
     }
-    // Si es un mock Base64, devolvemos un placeholder visual
+    // Si no es una URL, devolvemos un placeholder visual
     return EMPTY_BOOK_DATA.portadaBase64; 
 };
 
@@ -48,7 +44,6 @@ const getBookCoverUrl = (base64OrUrl) => {
 // --- 2. MODAL ÚNICO: BookFormModal (Registro y Edición) ---
 
 const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
-    // Es crucial que el initialData esté fuera del useState o que se maneje con useEffect si el prop 'book' cambia
     const initialData = book && book.id ? book : EMPTY_BOOK_DATA; 
     const [formData, setFormData] = useState(initialData);
     const [isSaving, setIsSaving] = useState(false);
@@ -57,9 +52,9 @@ const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
     const modalTitle = isNew ? 'Registrar Nuevo Libro Interno' : `Editar Libro: ${book?.titulo}`;
     const buttonText = isNew ? 'Registrar Libro' : 'Guardar Cambios';
 
-    // Este useEffect asegura que el formulario se resetee o cargue nuevos datos cuando el modal se abre/cambia el libro
     useEffect(() => {
         if (show) {
+            // Asegura que se cargue la data correcta o se resetee al abrir el modal
             setFormData(isNew && !book?.id ? EMPTY_BOOK_DATA : book);
             setError(null);
         }
@@ -83,7 +78,8 @@ const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
 
         setIsSaving(true);
         try {
-            onSave(formData, isNew); 
+            // La lógica de guardado (API REST) se delega al componente principal (Books)
+            await onSave(formData, isNew); 
             onClose();
         } catch (err) {
             console.error(`Error al guardar libro:`, err);
@@ -117,7 +113,7 @@ const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
                             type="text"
                             id="titulo"
                             name="titulo"
-                            value={formData.titulo}
+                            value={formData.titulo || ''}
                             onChange={handleChange}
                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             placeholder="Ej: Álgebra de Baldor"
@@ -131,7 +127,7 @@ const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
                             type="text"
                             id="generoLiterario"
                             name="generoLiterario"
-                            value={formData.generoLiterario}
+                            value={formData.generoLiterario || ''}
                             onChange={handleChange}
                             className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             placeholder="Ej: Matemáticas, Biología"
@@ -147,7 +143,7 @@ const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
                         <div className="text-sm text-gray-600 flex justify-between items-center">
                             <span>Estado del PDF:</span>
                             <span className={`font-mono text-xs p-1 rounded ${formData.pdfBase64 !== EMPTY_BOOK_DATA.pdfBase64 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                                {formData.pdfBase64 !== EMPTY_BOOK_DATA.pdfBase64 ? 'PDF Cargado' : 'PENDIENTE'}
+                                {formData.pdfBase64 && formData.pdfBase64 !== EMPTY_BOOK_DATA.pdfBase64 ? 'PDF Cargado' : 'PENDIENTE'}
                             </span>
                         </div>
                         
@@ -155,7 +151,6 @@ const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
                         <div className="flex justify-between items-center">
                             <button
                                 type="button"
-                                // Esto simularía la apertura del diálogo de subida de Uploadthing
                                 onClick={() => alert('Simulando subida de PDF (Uploadthing) \n - La URL resultante se guardaría en pdfBase64 -')}
                                 className="px-3 py-1 bg-gray-700 text-white text-xs rounded hover:bg-gray-800 transition-colors disabled:opacity-50"
                                 disabled={isSaving}
@@ -164,12 +159,12 @@ const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
                             </button>
                             
                             {/* Ver PDF Actual (si existe) */}
-                            {!isNew && (
+                            {formData.pdfBase64 && !isNew && (
                                 <button
                                     type="button"
                                     onClick={handleViewPdfClick}
                                     className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors disabled:opacity-50"
-                                    disabled={!book?.pdfBase64 || isSaving}
+                                    disabled={isSaving}
                                 >
                                     Ver PDF Actual
                                 </button>
@@ -205,8 +200,8 @@ const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
 // --- 3. COMPONENTE DE TABLA Y ACCIONES ---
 
 const TablaLibros = ({ books, onEdit, onDelete, onViewPdf, searchTerm }) => (
-    <div className="w-full overflow-hidden border border-gray-300 rounded-lg shadow-md">
-        <table className="min-w-full table-fixed border-collapse"> 
+    <div className="w-full overflow-x-auto border border-gray-300 rounded-lg shadow-md">
+        <table className="min-w-full table-auto border-collapse"> 
             <thead>
                 <tr className="bg-gray-700 text-white">
                     <th className="px-3 py-3 text-sm font-semibold uppercase w-20">PORTADA</th>
@@ -235,8 +230,7 @@ const TablaLibros = ({ books, onEdit, onDelete, onViewPdf, searchTerm }) => (
                                 src={getBookCoverUrl(book.portadaBase64)} 
                                 alt={`Portada de ${book.titulo}`} 
                                 className="h-16 w-12 object-cover rounded shadow-md border border-gray-200"
-                                // Fallback en caso de que la URL mock falle
-                                onError={(e) => { e.target.src = 'https://placehold.co/50x70/aaaaaa/ffffff?text=N/A'; }} 
+                                onError={(e) => { e.currentTarget.src = 'https://placehold.co/50x70/aaaaaa/ffffff?text=N/A'; }} 
                             />
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900 font-medium align-top"> 
@@ -291,13 +285,21 @@ const Books = () => {
 
     const [searchTerm, setSearchTerm] = useState('');
 
+    // --- MANEJO DE LA API REST ---
+    
+    // 1. Carga Inicial (GET /libros/admin)
     const fetchBooks = async () => {
         setIsLoading(true);
         try {
-            const internalBooks = await new Promise(resolve => setTimeout(() => resolve(LibroControllerInstance.findAllInternalBooks()), 100));
-            setAllBooks(internalBooks);
+            const response = await fetch(`${API_BASE_URL}/admin`);
+            if (!response.ok) throw new Error('Error al obtener libros del API.');
+            
+            const data = await response.json();
+            setAllBooks(data);
+
         } catch (error) {
             console.error("Error al cargar libros:", error);
+            // Mostrar un error visible al usuario si es necesario
         } finally {
             setIsLoading(false);
         }
@@ -307,6 +309,7 @@ const Books = () => {
         fetchBooks();
     }, []);
 
+    // 2. Lógica de Filtrado (en Frontend)
     const filteredBooks = useMemo(() => {
         if (searchTerm.trim() === '') return allBooks;
 
@@ -318,59 +321,96 @@ const Books = () => {
     }, [allBooks, searchTerm]);
 
 
-    const handleSaveBook = (bookData, isNew) => {
-        if (isNew) {
-            const newBook = LibroControllerInstance.handleRegisterBook(bookData);
-            setAllBooks(prev => [...prev, newBook]);
-        } else {
-            const updatedBook = LibroControllerInstance.handleEditBook(bookData);
-            setAllBooks(prev => prev.map(b => (b.id === updatedBook.id ? updatedBook : b)));
+    // 3. Registro y Edición (POST/PUT /libros/admin)
+    const handleSaveBook = async (bookData, isNew) => {
+        const method = isNew ? 'POST' : 'PUT';
+        const url = isNew ? `${API_BASE_URL}/admin` : `${API_BASE_URL}/admin/${bookData.id}`;
+        
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bookData),
+            });
+
+            if (!response.ok) throw new Error(`Error al ${isNew ? 'registrar' : 'actualizar'} libro.`);
+            
+            const savedBook = await response.json();
+
+            // Actualiza el estado local de React
+            if (isNew) {
+                setAllBooks(prev => [...prev, savedBook]);
+            } else {
+                setAllBooks(prev => prev.map(b => (b.id === savedBook.id ? savedBook : b)));
+            }
+
+        } catch (error) {
+            console.error("Error en handleSaveBook:", error);
+            throw error; // Propagar para que el modal muestre el error
         }
     };
 
-    const handleEditClick = (book) => {
-        setBookToEdit(book);
-        setIsEditing(true);
-        setShowFormModal(true);
-    };
-
-    const handleDeleteClick = (bookId, bookTitle) => {
+    // 4. Eliminación (DELETE /libros/admin/:id)
+    const handleDeleteClick = async (bookId, bookTitle) => {
         if (window.confirm(`¿Estás seguro de eliminar el libro "${bookTitle}"?`)) {
             try {
-                LibroControllerInstance.handleDeleteBook(bookId);
+                const response = await fetch(`${API_BASE_URL}/admin/${bookId}`, {
+                    method: 'DELETE',
+                });
+
+                if (!response.ok) throw new Error('Error al eliminar libro.');
+
+                // Actualiza el estado local de React
                 setAllBooks(prev => prev.filter(b => b.id !== bookId));
                 console.log(`Libro ${bookTitle} eliminado.`);
+
             } catch (error) {
-                alert("Error al eliminar el libro.");
+                alert("Error al eliminar el libro. Verifique la conexión con el servidor.");
                 console.error("Error al eliminar:", error);
             }
         }
     };
     
+    // 5. Visualizar PDF (GET /libros/pdf)
     const handleViewPdf = async (book) => {
         try {
-            const pdfBase64 = await LibroControllerInstance.handleGetPdf(
-                book.id.toString(), 
-                book.universidadPropietaria, 
-                false
-            );
+            const params = new URLSearchParams({
+                id: book.id.toString(),
+                universidad: book.universidadPropietaria,
+                external: 'false', // Siempre falso para el CRUD interno
+            });
 
-            if (pdfBase64) {
+            const response = await fetch(`${API_BASE_URL}/pdf?${params.toString()}`);
+            
+            if (!response.ok) throw new Error('PDF no encontrado o error en el servidor.');
+
+            const { pdfBase64 } = await response.json();
+            
+            if (pdfBase64 && pdfBase64 !== EMPTY_BOOK_DATA.pdfBase64) {
+                // Abre el PDF en una nueva pestaña
                 const pdfBlob = b64toBlob(pdfBase64, 'application/pdf');
                 const pdfUrl = URL.createObjectURL(pdfBlob);
                 window.open(pdfUrl, '_blank');
             } else {
-                alert('PDF no disponible o el archivo mock está vacío.');
+                alert('El PDF está en modo mock (placeholder) o no disponible en el servidor.');
             }
+
         } catch (error) {
             alert('Ocurrió un error al intentar ver el PDF.');
             console.error("Error al ver PDF:", error);
         }
     };
 
+    // --- Handlers para abrir el modal ---
+    const handleEditClick = (book) => {
+        setBookToEdit(book);
+        setIsEditing(true);
+        setShowFormModal(true);
+    };
+
 
     return (
-        <div className="w-full space-y-6 px-4 py-8">
+        <div className="w-full space-y-6 px-4 py-8 max-w-7xl mx-auto">
             
             {/* Encabezado y Botón de Agregar Libro */}
             <div className="flex justify-between items-center">
@@ -427,7 +467,7 @@ const Books = () => {
                 isNew={!isEditing}
                 onPdfView={handleViewPdf}
             />
-
+            
             {/* Paginación (Placeholder) */}
             <div className="flex justify-center items-center space-x-3 py-6">
                  {/* ... (botones de paginación) ... */}
