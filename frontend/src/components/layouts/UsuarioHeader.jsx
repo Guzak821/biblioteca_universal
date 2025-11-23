@@ -17,7 +17,7 @@ const UsuarioHeader = () => {
     // Aquí puedes agregar la lógica de logout (limpiar tokens, etc.)
     console.log('Cerrando sesión...');
     // Redirigir al login o página principal
-    navigate('/');
+    navigate('/login');
   };
 
   return (

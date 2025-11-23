@@ -1,7 +1,8 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const AdminHeader = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   
   const navItems = [
     { name: 'HOME', path: '/admin' },
@@ -11,6 +12,13 @@ const AdminHeader = () => {
 
   const isActive = (path) => {
     return location.pathname === path;
+  };
+
+   const handleLogout = () => {
+    // Aquí puedes agregar la lógica de logout (limpiar tokens, etc.)
+    console.log('Cerrando sesión...');
+    // Redirigir al login o página principal
+    navigate('/login');
   };
 
   return (
@@ -47,6 +55,14 @@ const AdminHeader = () => {
                 {item.name}
               </Link>
             ))}
+
+             {/* Botón de Logout */}
+            <button
+              onClick={handleLogout}
+              className="ml-4 px-6 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded transition-colors duration-200"
+            >
+              LOGOUT
+            </button>
           </div>
         </div>
       </nav>
