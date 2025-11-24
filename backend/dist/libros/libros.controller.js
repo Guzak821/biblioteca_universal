@@ -29,6 +29,7 @@ let LibrosController = class LibrosController {
                 generoLiterario: libro.generoLiterario,
                 portadaBase64: libro.portadaBase64,
                 universidadPropietaria: libro.universidadPropietaria,
+                pdfBase64: libro.pdfBase64,
             }));
         }
         catch (error) {

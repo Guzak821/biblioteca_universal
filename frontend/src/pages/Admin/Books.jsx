@@ -47,8 +47,8 @@ const getBookCoverUrl = (base64OrUrl) => {
 };
 
 
-// --- MODAL DE CONFIRMACIÓN ---
-const ConfirmationModal = ({ show, title, message, onConfirm, onCancel }) => {
+// --- MODAL DE CONFIRMACIÓN (Usado solo para Eliminación) ---
+const ConfirmationModal = ({ show, title, message, onConfirm, onCancel, confirmText = 'Aceptar', cancelText = 'Cancelar' }) => {
     if (!show) return null;
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-[100] flex justify-center items-center p-4">
@@ -60,13 +60,13 @@ const ConfirmationModal = ({ show, title, message, onConfirm, onCancel }) => {
                         onClick={onCancel}
                         className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
                     >
-                        Cancelar
+                        {cancelText}
                     </button>
                     <button
                         onClick={onConfirm}
-                        className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+                        className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${title.includes('Eliminación') ? 'bg-red-600 hover:bg-red-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                     >
-                        Confirmar Eliminación
+                        {confirmText}
                     </button>
                 </div>
             </div>
@@ -77,10 +77,13 @@ const ConfirmationModal = ({ show, title, message, onConfirm, onCancel }) => {
 
 // --- MODAL ÚNICO: BookFormModal (Registro y Edición) ---
 const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
+    
+    // Al abrir el modal, inicializamos el estado (el Base64 de archivos nuevos es VOLÁTIL)
     const initialData = useMemo(() => {
         const data = book && book.id ? book : EMPTY_BOOK_DATA;
         return {
             ...data,
+            // pdfFileName siempre se resetea al abrir para reflejar un archivo nuevo
             pdfFileName: (book && book.pdfBase64) ? 'Archivo Existente' : '',
         };
     }, [book]);
@@ -88,6 +91,7 @@ const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
     const [formData, setFormData] = useState(initialData);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState(null);
+
     const fileInputRef = useRef(null); 
     const coverInputRef = useRef(null); 
     
@@ -102,7 +106,8 @@ const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
     }, [show, initialData]); 
 
     if (!show) return null;
-
+    
+    
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -112,12 +117,14 @@ const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
     const handleCoverFileChange = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
+        
+        // Validación de tipo
         if (!file.type.startsWith('image/')) {
             setError("Solo se permiten archivos de imagen para la portada (JPEG, PNG, etc.).");
             return;
         }
 
+        // Validación de tamaño: Limitar a 500KB
         const MAX_SIZE = 500 * 1024; 
         if (file.size > MAX_SIZE) {
             setError("La imagen de portada es demasiado grande (máx. 500KB).");
@@ -168,6 +175,7 @@ const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
         reader.readAsDataURL(file);
     };
 
+    // --- MANEJADOR DE ENVÍO: ÚNICO PUNTO DE PERSISTENCIA ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
@@ -177,6 +185,7 @@ const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
             return;
         }
         
+        // El PDF debe estar presente al crear un nuevo libro
         if (isNew && !formData.pdfBase64) {
              setError("Debe subir un archivo PDF para registrar un nuevo libro.");
              return;
@@ -184,8 +193,9 @@ const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
 
         setIsSaving(true);
         try {
+            // Llama a la API para guardar en la DB
             await onSave(formData, isNew); 
-            onClose();
+            onClose(); // Cierra SÓLO si el guardado fue exitoso
         } catch (err) {
             console.error(`Error al guardar libro:`, err);
             throw err; 
@@ -197,7 +207,6 @@ const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
     const handleViewPdfClick = () => {
         onPdfView(formData);
     };
-
 
     // Determina el estado del PDF
     const pdfLoaded = formData.pdfBase64 && formData.pdfBase64 !== EMPTY_BOOK_DATA.pdfBase64;
@@ -211,9 +220,10 @@ const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
 
     return (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex justify-center items-center p-4">
+            
             <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg mx-auto p-6">
                 <button
-                    onClick={onClose}
+                    onClick={onClose} 
                     className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
                     disabled={isSaving}
                 >
@@ -353,7 +363,7 @@ const BookFormModal = ({ show, onClose, book, onSave, isNew, onPdfView }) => {
                     <div className="pt-4 flex justify-end space-x-3">
                         <button
                             type="button"
-                            onClick={onClose}
+                            onClick={onClose} 
                             className="inline-flex justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-100"
                             disabled={isSaving}
                         >
@@ -467,6 +477,9 @@ const App = () => {
     const [showFormModal, setShowFormModal] = useState(false);
     const [bookToEdit, setBookToEdit] = useState(null); 
     const [isEditing, setIsEditing] = useState(false); 
+    
+    // NO SE USA EL ESTADO DE 'IS DIRTY'
+    // const [isFormDirtyWithFiles, setIsFormDirtyWithFiles] = useState(false); 
 
     // Estados del Modal de Confirmación (Eliminación)
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -480,6 +493,7 @@ const App = () => {
         setTimeout(() => setStatusMessage(null), 4000);
     };
 
+     
     // --- MANEJO DE LA API REST ---
     
     // 1. Carga Inicial (GET /api/libros)

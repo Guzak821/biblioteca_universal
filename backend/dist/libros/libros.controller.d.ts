@@ -9,6 +9,7 @@ export declare class LibrosController {
         generoLiterario: string;
         portadaBase64: string;
         universidadPropietaria: string;
+        pdfBase64: string;
     }[]>;
     findOne(id: number): Promise<import("../libros/domain/models/LibroModel").LibroModel>;
     create(dto: CreateLibroDto): Promise<{
