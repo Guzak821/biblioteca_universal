@@ -16,8 +16,8 @@ exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
 const AuthService_1 = require("./AuthService");
 let AuthController = class AuthController {
-    constructor() {
-        this.authService = new AuthService_1.AuthService();
+    constructor(authService) {
+        this.authService = authService;
     }
     async login(loginDto) {
         const { usuario, contrasena } = loginDto;
@@ -29,7 +29,10 @@ let AuthController = class AuthController {
         }
         const result = await this.authService.login(usuario, contrasena);
         if (!result.success) {
-            throw new common_1.HttpException(result, common_1.HttpStatus.UNAUTHORIZED);
+            throw new common_1.HttpException({
+                success: false,
+                message: result.message,
+            }, common_1.HttpStatus.UNAUTHORIZED);
         }
         return result;
     }
@@ -56,6 +59,6 @@ __decorate([
 ], AuthController.prototype, "logout", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('api/auth'),
-    __metadata("design:paramtypes", [])
+    __metadata("design:paramtypes", [AuthService_1.AuthService])
 ], AuthController);
 //# sourceMappingURL=AuthController.js.map

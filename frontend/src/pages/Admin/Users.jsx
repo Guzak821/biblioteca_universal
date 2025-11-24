@@ -1,12 +1,8 @@
 // src/pages/Admin/AdminUsers.jsx
-// src/pages/Admin/AdminUsers.jsx
 import React, { useState, useEffect, useMemo } from 'react';
-// IMPORTANTE: Asegura la ruta correcta a tu controlador
-import { UsuarioController } from '../../../../backend/src/controller/UsuarioController'; 
 
-// --- 1. CONFIGURACIÓN E INSTANCIAS ---
-
-const UsuarioControllerInstance = new UsuarioController();
+// --- 1. CONFIGURACIÓN DE API ---
+const API_BASE_URL = 'http://localhost:3000/api';
 
 const EMPTY_USER_DATA = {
     usuario: '',
@@ -14,9 +10,7 @@ const EMPTY_USER_DATA = {
     rol: 'Alumno', 
 };
 
-
 // --- 2. MODAL ÚNICO: UserFormModal (Registro y Edición) ---
-
 const UserFormModal = ({ show, onClose, user, onSave, isNew }) => {
     const [formData, setFormData] = useState(user || EMPTY_USER_DATA);
     const [isSaving, setIsSaving] = useState(false);
@@ -43,8 +37,7 @@ const UserFormModal = ({ show, onClose, user, onSave, isNew }) => {
 
         setIsSaving(true);
         try {
-            // Llama a la función de guardado en el componente padre
-            onSave(formData, isNew); 
+            await onSave(formData, isNew); 
             onClose();
         } catch (err) {
             console.error(`Error al ${isNew ? 'registrar' : 'editar'} usuario:`, err);
@@ -55,7 +48,6 @@ const UserFormModal = ({ show, onClose, user, onSave, isNew }) => {
     };
 
     return (
-        // ... (Estructura visual del modal con estilos Tailwind CSS)
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex justify-center items-center">
             <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-auto p-6">
                 
@@ -137,9 +129,7 @@ const UserFormModal = ({ show, onClose, user, onSave, isNew }) => {
     );
 };
 
-
 // --- 3. COMPONENTE DE TABLA ---
-
 const TablaUsuarios = ({ usuarios, isLoading, onEdit, onDelete }) => (
     <div className="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
         <h3 className="text-xl font-semibold text-gray-700 mb-4">
@@ -189,12 +179,10 @@ const TablaUsuarios = ({ usuarios, isLoading, onEdit, onDelete }) => (
     </div>
 );
 
-
 // --- 4. COMPONENTE PRINCIPAL: AdminUsers ---
-
 const AdminUsers = () => {
     // Estados principales
-    const [allUsuarios, setAllUsuarios] = useState([]); // Lista original sin filtrar
+    const [allUsuarios, setAllUsuarios] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     
     // ESTADOS PARA BÚSQUEDA Y FILTRO
@@ -206,14 +194,16 @@ const AdminUsers = () => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [userToEdit, setUserToEdit] = useState(null);
 
-    // --- Carga Inicial de Usuarios (DAO) ---
+    // --- Carga Inicial de Usuarios (GET /api/usuarios) ---
     const fetchUsers = async () => {
         setIsLoading(true);
         try {
-            const listaUsuarios = await UsuarioControllerInstance.handleGetUsers(); 
-            setAllUsuarios(listaUsuarios);
+            const response = await fetch(`${API_BASE_URL}/usuarios`);
+            const data = await response.json();
+            setAllUsuarios(data);
         } catch (error) {
             console.error("Error al cargar usuarios:", error);
+            alert("Error al cargar usuarios");
         } finally {
             setIsLoading(false);
         }
@@ -232,7 +222,7 @@ const AdminUsers = () => {
             currentUsers = currentUsers.filter(user => user.rol === filterRole);
         }
 
-        // 2. Filtrar por término de búsqueda (instantáneo)
+        // 2. Filtrar por término de búsqueda
         if (searchTerm.trim() !== '') {
             const lowerCaseSearch = searchTerm.toLowerCase().trim();
             currentUsers = currentUsers.filter(user => 
@@ -242,27 +232,53 @@ const AdminUsers = () => {
         }
 
         return currentUsers;
-    }, [allUsuarios, searchTerm, filterRole]); // Re-calcula solo cuando cambian las dependencias
+    }, [allUsuarios, searchTerm, filterRole]);
 
-    // --- LÓGICA CRUD (CQRS/DAO) ---
+    // --- LÓGICA CRUD (API REST) ---
 
-    // Función unificada que el Modal llama al hacer Submit (Registro o Edición)
-    const handleSaveUser = (userData, isNew) => {
-        if (isNew) {
-            // Flujo: MVC -> CQRS.registerUser -> DAO
-            const registeredUser = UsuarioControllerInstance.handleRegisterUser(userData);
-            setAllUsuarios(prev => [...prev, registeredUser]); // Actualizar lista original
-        } else {
-             // Flujo: MVC -> CQRS.editUser -> DAO
-            const updatedUser = UsuarioControllerInstance.handleEditUser(userData); 
-            // Actualizar lista original en el estado de React
-            setAllUsuarios(prev => prev.map(u => 
-                u.id === updatedUser.id ? updatedUser : u
-            ));
+    // Guardar usuario (Crear o Editar)
+    const handleSaveUser = async (userData, isNew) => {
+        try {
+            if (isNew) {
+                // POST /api/usuarios (Crear)
+                const response = await fetch(`${API_BASE_URL}/usuarios`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userData),
+                });
+
+                if (!response.ok) throw new Error('Error al crear usuario');
+                
+                const result = await response.json();
+                setAllUsuarios(prev => [...prev, result.data]);
+            } else {
+                // PUT /api/usuarios/:id (Editar)
+                const response = await fetch(`${API_BASE_URL}/usuarios/${userData.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: userData.usuario,
+                        contrasena: userData.contrasena,
+                        rol: userData.rol,
+                    }),
+                });
+
+                if (!response.ok) throw new Error('Error al actualizar usuario');
+
+                const result = await response.json();
+                setAllUsuarios(prev => prev.map(u => 
+                    u.id === result.data.id ? result.data : u
+                ));
+            }
+            
+            setShowRegisterModal(false);
+            setShowEditModal(false);
+            setUserToEdit(null);
+        } catch (error) {
+            console.error("Error al guardar usuario:", error);
+            alert("Error al guardar usuario");
+            throw error;
         }
-        setShowRegisterModal(false);
-        setShowEditModal(false);
-        setUserToEdit(null);
     };
 
     // Abre el modal de edición
@@ -271,24 +287,25 @@ const AdminUsers = () => {
         setShowEditModal(true);
     };
 
-    // Lógica de eliminación (MVC -> CQRS -> DAO)
-    const handleDeleteClick = (userId, userName) => {
+    // Eliminar usuario (DELETE /api/usuarios/:id)
+    const handleDeleteClick = async (userId, userName) => {
         if (window.confirm(`¿Estás seguro de eliminar al usuario ${userName}? Esta acción es irreversible.`)) {
             try {
-                // Flujo: MVC -> CQRS.deleteUser -> DAO
-                UsuarioControllerInstance.handleDeleteUser(userId); 
-                
-                // Actualiza la lista original
+                const response = await fetch(`${API_BASE_URL}/usuarios/${userId}`, {
+                    method: 'DELETE',
+                });
+
+                if (!response.ok) throw new Error('Error al eliminar usuario');
+
                 setAllUsuarios(prev => prev.filter(u => u.id !== userId));
             } catch (error) {
-                alert("Error al eliminar el usuario.");
                 console.error("Error al eliminar:", error);
+                alert("Error al eliminar el usuario");
             }
         }
     };
     
     // --- RENDERIZADO ---
-    
     return (
         <div className="space-y-6">
             
@@ -299,8 +316,8 @@ const AdminUsers = () => {
                 </h2>
                 <button 
                     onClick={() => {
-                        setUserToEdit(EMPTY_USER_DATA); // Limpiar datos de edición
-                        setShowRegisterModal(true); // Abrir modal de registro
+                        setUserToEdit(EMPTY_USER_DATA);
+                        setShowRegisterModal(true);
                     }} 
                     className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-150 shadow-md">
                     + Nuevo Usuario
@@ -313,12 +330,12 @@ const AdminUsers = () => {
                     type="text" 
                     placeholder="Buscar por usuario o rol..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)} // Captura el input en tiempo real
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     className="flex-1 p-2 border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500"
                 />
                 <select 
                     value={filterRole}
-                    onChange={(e) => setFilterRole(e.target.value)} // Captura el rol para filtrar
+                    onChange={(e) => setFilterRole(e.target.value)}
                     className="p-2 border border-gray-300 rounded"
                 >
                     <option value="Todos">Todos los roles</option>
@@ -327,15 +344,15 @@ const AdminUsers = () => {
                 </select>
             </div>
             
-            {/* Tabla de Usuarios (Muestra la lista FILTRADA) */}
+            {/* Tabla de Usuarios */}
             <TablaUsuarios 
-                usuarios={filteredUsuarios} // Pasa la lista filtrada
+                usuarios={filteredUsuarios}
                 isLoading={isLoading} 
                 onEdit={handleEditClick} 
                 onDelete={handleDeleteClick} 
             />
 
-            {/* MODAL DE REGISTRO (Usa el formulario genérico) */}
+            {/* MODAL DE REGISTRO */}
             <UserFormModal
                 show={showRegisterModal}
                 onClose={() => setShowRegisterModal(false)}
@@ -344,11 +361,11 @@ const AdminUsers = () => {
                 isNew={true}
             />
 
-            {/* MODAL DE EDICIÓN (Usa el formulario genérico) */}
+            {/* MODAL DE EDICIÓN */}
             {showEditModal && userToEdit && (
                  <UserFormModal 
                     show={showEditModal} 
-                    user={userToEdit} // Pasa los datos del usuario a editar
+                    user={userToEdit}
                     onClose={() => setShowEditModal(false)}
                     onSave={handleSaveUser} 
                     isNew={false}

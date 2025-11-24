@@ -1,15 +1,18 @@
-import { UsuarioModel } from '../libros/domain/models/UsuarioModel';
+import { UsuarioDao } from '../usuarios/UsuarioDao';
+import { UsuarioCqrs } from '../usuarios/UsuarioCqrs';
+import { UsuarioModel, CreateUsuarioDto, UpdateUsuarioDto } from '../usuarios/UsuarioModel';
 export declare class UsuarioController {
-    private usuarioDao;
-    private usuarioCqrs;
-    constructor();
-    handleLogin(usuario: string, contrasena: string): {
+    private readonly usuarioDao;
+    private readonly usuarioCqrs;
+    constructor(usuarioDao: UsuarioDao, usuarioCqrs: UsuarioCqrs);
+    handleLogin(usuario: string, contrasena: string): Promise<{
         success: boolean;
         user?: UsuarioModel;
         message: string;
-    };
-    handleRegisterUser(user: Omit<UsuarioModel, 'id'>): UsuarioModel;
-    handleEditUser(user: UsuarioModel): UsuarioModel | null;
+    }>;
     handleGetUsers(): Promise<UsuarioModel[]>;
-    handleDeleteUser(id: number): boolean;
+    handleGetUserById(id: number): Promise<UsuarioModel | null>;
+    handleRegisterUser(dto: CreateUsuarioDto): Promise<UsuarioModel>;
+    handleEditUser(id: number, dto: UpdateUsuarioDto): Promise<UsuarioModel | null>;
+    handleDeleteUser(id: number): Promise<boolean>;
 }

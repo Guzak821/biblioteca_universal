@@ -13,8 +13,8 @@ exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const UsuarioController_1 = require("../controller/UsuarioController");
 let AuthService = class AuthService {
-    constructor() {
-        this.usuarioController = new UsuarioController_1.UsuarioController();
+    constructor(usuarioController) {
+        this.usuarioController = usuarioController;
     }
     async login(usuario, contrasena) {
         const result = await this.usuarioController.handleLogin(usuario, contrasena);
@@ -31,13 +31,10 @@ let AuthService = class AuthService {
             message: 'Credenciales incorrectas o usuario no encontrado.',
         };
     }
-    validateToken(token) {
-        return false;
-    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [])
+    __metadata("design:paramtypes", [UsuarioController_1.UsuarioController])
 ], AuthService);
 //# sourceMappingURL=AuthService.js.map

@@ -11,14 +11,17 @@ const common_1 = require("@nestjs/common");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const LibrosModule_1 = require("./libros/LibrosModule");
-const AuthController_1 = require("./auth/AuthController");
+const auth_module_1 = require("./auth/auth.module");
+const typeorm_1 = require("@nestjs/typeorm");
+const database_config_1 = require("./config/database.config");
+const UsuariosModule_1 = require("./usuarios/UsuariosModule");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [LibrosModule_1.LibrosModule],
-        controllers: [app_controller_1.AppController, AuthController_1.AuthController],
+        imports: [LibrosModule_1.LibrosModule, typeorm_1.TypeOrmModule.forRoot(database_config_1.databaseConfig), UsuariosModule_1.UsuariosModule, auth_module_1.AuthModule],
+        controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
     })
 ], AppModule);

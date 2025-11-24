@@ -2,11 +2,14 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { LibrosModule } from './libros/LibrosModule';
-import { AuthController } from './auth/AuthController';
+import { AuthModule } from './auth/auth.module'; 
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { databaseConfig } from './config/database.config';
+import { UsuariosModule } from './usuarios/UsuariosModule';
 
 @Module({
-  imports: [LibrosModule],
-  controllers: [AppController, AuthController],
+  imports: [LibrosModule, TypeOrmModule.forRoot(databaseConfig), UsuariosModule, AuthModule],
+  controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}

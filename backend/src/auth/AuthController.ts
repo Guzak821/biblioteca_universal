@@ -1,29 +1,28 @@
-import { Controller, Post, Body, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { AuthService } from './AuthService';
 
 /**
- * Controlador de autenticación - Endpoints HTTP
- * Patrón MVC: Recibe peticiones y delega a la capa de servicio
+ * AuthController - Endpoints HTTP de autenticación
  */
 @Controller('api/auth')
 export class AuthController {
-  private authService: AuthService;
-
-  constructor() {
-    this.authService = new AuthService();
-  }
+  constructor(
+    private readonly authService: AuthService,
+  ) {}
 
   /**
    * POST /api/auth/login
-   * Endpoint de inicio de sesión
    */
   @Post('login')
-  async login(
-    @Body() loginDto: { usuario: string; contrasena: string },
-  ) {
+  async login(@Body() loginDto: { usuario: string; contrasena: string }) {
     const { usuario, contrasena } = loginDto;
 
-    // Validación de entrada
     if (!usuario || !contrasena) {
       throw new HttpException(
         {
@@ -34,12 +33,14 @@ export class AuthController {
       );
     }
 
-    // Delega al servicio de autenticación
     const result = await this.authService.login(usuario, contrasena);
 
     if (!result.success) {
       throw new HttpException(
-        result,
+        {
+          success: false,
+          message: result.message,
+        },
         HttpStatus.UNAUTHORIZED,
       );
     }
@@ -49,7 +50,6 @@ export class AuthController {
 
   /**
    * POST /api/auth/logout
-   * Endpoint de cierre de sesión
    */
   @Post('logout')
   logout() {

@@ -10,7 +10,7 @@ import AdminBooks from '../pages/Admin/Books';
 // Páginas Usuario
 import UsuarioHome from '../pages/usuario/Home';
 import UsuarioBooks from '../pages/usuario/Books';
-import Login from '../../src/pages/login/Login.tsx'
+import Login from '../../src/pages/login/Login'
 
 const AppRoutes = () => {
   return (

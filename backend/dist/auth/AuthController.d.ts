@@ -1,6 +1,7 @@
+import { AuthService } from './AuthService';
 export declare class AuthController {
-    private authService;
-    constructor();
+    private readonly authService;
+    constructor(authService: AuthService);
     login(loginDto: {
         usuario: string;
         contrasena: string;
