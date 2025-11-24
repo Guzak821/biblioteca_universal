@@ -28,9 +28,11 @@ const UsuarioHeader = () => {
           <div className="flex items-center space-x-2">
             <Link to="/usuario" className="flex items-center space-x-2">
               <div className="w-12 h-12 bg-teal-700 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-[8px] text-center leading-tight">
-                  BIBLIOTECA<br/>DIGITAL
-                </span>
+                 <img
+                src="/img/logo_biblioteca.png" 
+                alt="Logo de la Biblioteca Digital"
+                className="w-30 h-12 object-contain shadow-lg" // Clases para ajustar tamaño y estilo
+              />
               </div>
               <div className="text-white">
                 <div className="text-lg font-bold tracking-wide">BIBLIOTECA</div>

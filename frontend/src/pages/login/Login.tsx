@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 
 // Configuración de la URL del backend
-const API_BASE_URL = 'http://localhost:3000/api'; // Ajusta el puerto según tu backend
+const API_BASE_URL = 'http://localhost:3000/api'; // puerto del backend
 
 const LoginScreen = ({ onLoginSuccess }) => {
     const [usuario, setUsuario] = useState('');

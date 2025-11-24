@@ -15,7 +15,6 @@ const AdminHeader = () => {
   };
 
    const handleLogout = () => {
-    // Aquí puedes agregar la lógica de logout (limpiar tokens, etc.)
     console.log('Cerrando sesión...');
     // Redirigir al login o página principal
     navigate('/login');
@@ -29,13 +28,15 @@ const AdminHeader = () => {
           <div className="flex items-center space-x-2">
             <Link to="/admin" className="flex items-center space-x-2">
               <div className="w-12 h-12 bg-teal-700 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-[8px] text-center leading-tight">
-                  BIBLIOTECA<br/>DIGITAL
-                </span>
+                <img
+                src="/img/logo_biblioteca.png" 
+                alt="Logo de la Biblioteca Digital"
+                className="w-30 h-60 object-contain shadow-lg" // Clases para ajustar tamaño y estilo
+              />
               </div>
               <div className="text-white">
                 <div className="text-lg font-bold tracking-wide">BIBLIOTECA</div>
-                <div className="text-sm font-light">DIGITAL</div>
+                <div className="text-sm font-light">UNIVERSAL</div>
               </div>
             </Link>
           </div>
