@@ -31,7 +31,7 @@ const AdminHeader = () => {
                 <img
                 src="/img/logo_biblioteca.png" 
                 alt="Logo de la Biblioteca Digital"
-                className="w-30 h-60 object-contain shadow-lg" // Clases para ajustar tamaño y estilo
+                className="w-30 h-12 object-contain shadow-lg" // Clases para ajustar tamaño y estilo
               />
               </div>
               <div className="text-white">
