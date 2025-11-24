@@ -45,7 +45,7 @@ const handleViewPdf = async (book, displayStatus) => {
         return;
     }
 
-    const isExternal = book.isExternal === true || book.universidadPropietaria !== 'UTL';
+   const isExternal = book.isExternal === true;
 
     try {
         const params = new URLSearchParams({
@@ -283,7 +283,7 @@ const AdminDashboard = () => {
                     </p>
                     {/* Nota: En un entorno real de React Router, esto sería un <Link to="/admin/gestion"> */}
                     <a 
-                        href="/admin/gestion" 
+                        href="/admin/books" 
                         className="inline-flex items-center space-x-2 px-6 py-3 border border-transparent text-base font-medium rounded-xl shadow-sm text-white bg-indigo-500 hover:bg-indigo-600 transition-colors"
                     >
                         <BookOpen size={20} />

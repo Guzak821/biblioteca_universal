@@ -25,7 +25,7 @@ let UnamApiService = class UnamApiService {
             const data = await response.json();
             return data.map((libro) => {
                 const model = new LibroModel_1.LibroModel(libro.id, libro.titulo, libro.generoLiterario || libro.genero_literario || 'Sin género', libro.portadaBase64 || libro.portada_base64 || '', libro.pdfBase64 || libro.pdf_base64 || '', 'UNAM');
-                return LibroViewModel_1.LibroViewModel.fromModel(model);
+                return LibroViewModel_1.LibroViewModel.fromModel(model, true);
             });
         }
         catch (error) {

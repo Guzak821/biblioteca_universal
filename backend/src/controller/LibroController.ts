@@ -75,28 +75,32 @@ export class LibroController {
    * Implementa patrones: MVC, DDD, MVVM, DAO
    */
   async handleSearchBooks(filtro: string): Promise<LibroViewModel[]> {
-    console.log(`[LibroController] Búsqueda global con filtro: "${filtro}"`);
+  console.log(`[LibroController] Búsqueda global con filtro: "${filtro}"`);
 
-    // 1. Consultar libros internos usando DAO
-    const librosInternos = await this.libroDao.searchByFilter(filtro);
-    const viewModelsInternos = LibroViewModel.fromModelArray(librosInternos);
+  // 1. Consultar libros internos usando DAO
+  const librosInternos = await this.libroDao.searchByFilter(filtro);
+  const viewModelsInternos = LibroViewModel.fromModelArray(librosInternos, false); // false = NO es externo
 
-    // 2. Consultar libros externos usando ApiService (DDD)
-    const [librosUnam, librosOxford] = await Promise.all([
-      this.unamApiService.searchBooks(filtro),
-      this.oxfordApiService.searchBooks(filtro),
-    ]);
+  // 2. Consultar libros externos usando ApiService (DDD)
+  const [librosUnam, librosOxford] = await Promise.all([
+    this.unamApiService.searchBooks(filtro),
+    this.oxfordApiService.searchBooks(filtro),
+  ]);
 
-    // 3. Unir resultados (internos + externos)
-    const todosLosLibros = [
-      ...viewModelsInternos,
-      ...librosUnam,
-      ...librosOxford,
-    ];
+  // 3. Marcar los libros externos con isExternal = true
+  const librosUnamMapped = librosUnam.map(libro => ({ ...libro, isExternal: true })); 
+  const librosOxfordMapped = librosOxford.map(libro => ({ ...libro, isExternal: true })); 
 
-    console.log(`[LibroController] Total de libros encontrados: ${todosLosLibros.length}`);
-    return todosLosLibros;
-  }
+  // 4. Unir resultados (internos + externos)
+  const todosLosLibros = [
+    ...viewModelsInternos,
+    ...librosUnamMapped,
+    ...librosOxfordMapped,
+  ];
+
+  console.log(`[LibroController] Total de libros encontrados: ${todosLosLibros.length}`);
+  return todosLosLibros;
+}
 
   /**
    * Obtener contenido PDF de un libro

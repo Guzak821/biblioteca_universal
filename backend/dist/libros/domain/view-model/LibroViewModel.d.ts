@@ -4,8 +4,10 @@ export declare class LibroViewModel {
     titulo: string;
     generoLiterario: string;
     portadaBase64: string;
+    pdfBase64: string;
     universidadPropietaria: string;
-    constructor(libro: LibroModel);
-    static fromModel(libro: LibroModel): LibroViewModel;
-    static fromModelArray(libros: LibroModel[]): LibroViewModel[];
+    isExternal: boolean;
+    constructor(libro: LibroModel, isExternal?: boolean);
+    static fromModel(libro: LibroModel, isExternal?: boolean): LibroViewModel;
+    static fromModelArray(libros: LibroModel[], isExternal?: boolean): LibroViewModel[];
 }

@@ -36,6 +36,15 @@ let LibrosController = class LibrosController {
             throw new common_1.HttpException('Error al obtener libros', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    async search(filtro) {
+        try {
+            const libros = await this.libroController.handleSearchBooks(filtro || '');
+            return libros;
+        }
+        catch (error) {
+            throw new common_1.HttpException('Error en la búsqueda', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
     async findOne(id) {
         try {
             const libro = await this.libroController.handleGetBookById(id);
@@ -98,15 +107,6 @@ let LibrosController = class LibrosController {
             throw new common_1.HttpException('Error al eliminar libro', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    async search(filtro) {
-        try {
-            const libros = await this.libroController.handleSearchBooks(filtro || '');
-            return libros;
-        }
-        catch (error) {
-            throw new common_1.HttpException('Error en la búsqueda', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
     async getPdf(id, universidad, external) {
         try {
             const isExternal = external === 'true';
@@ -130,6 +130,13 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], LibrosController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('search'),
+    __param(0, (0, common_1.Query)('filtro')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], LibrosController.prototype, "search", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
@@ -159,13 +166,6 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], LibrosController.prototype, "remove", null);
-__decorate([
-    (0, common_1.Get)('search'),
-    __param(0, (0, common_1.Query)('filtro')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], LibrosController.prototype, "search", null);
 __decorate([
     (0, common_1.Get)('file/pdf'),
     __param(0, (0, common_1.Query)('id')),

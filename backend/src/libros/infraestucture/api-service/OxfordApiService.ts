@@ -36,7 +36,7 @@ export class OxfordApiService {
           book.pdf || book.pdfBase64 || '',
           'OXFORD',
         );
-        return LibroViewModel.fromModel(model);
+        return LibroViewModel.fromModel(model, true); // true = ES externo
       });
     } catch (error) {
       console.error('[OxfordApiService] Error al consultar API Oxford:', error);

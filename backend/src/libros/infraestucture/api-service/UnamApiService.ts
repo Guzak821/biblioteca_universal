@@ -15,36 +15,36 @@ export class UnamApiService {
    * Busca libros en la API de la UNAM
    * Retorna LibroViewModel mapeados
    */
-  async searchBooks(filtro: string): Promise<LibroViewModel[]> {
-    try {
-      console.log(`[UnamApiService] Consultando API UNAM con filtro: "${filtro}"`);
+ async searchBooks(filtro: string): Promise<LibroViewModel[]> {
+  try {
+    console.log(`[UnamApiService] Consultando API UNAM con filtro: "${filtro}"`);
 
-      const response = await fetch(`${this.apiUrl}?filtro=${encodeURIComponent(filtro)}`);
-      
-      if (!response.ok) {
-        console.error(`[UnamApiService] Error HTTP: ${response.status}`);
-        return [];
-      }
-
-      const data = await response.json();
-
-      // Mapear los datos externos a LibroViewModel
-      return data.map((libro: any) => {
-        const model = new LibroModel(
-          libro.id,
-          libro.titulo,
-          libro.generoLiterario || libro.genero_literario || 'Sin género',
-          libro.portadaBase64 || libro.portada_base64 || '',
-          libro.pdfBase64 || libro.pdf_base64 || '',
-          'UNAM', // Universidad propietaria
-        );
-        return LibroViewModel.fromModel(model);
-      });
-    } catch (error) {
-      console.error('[UnamApiService] Error al consultar API UNAM:', error);
-      return []; // Retornar array vacío en caso de error
+    const response = await fetch(`${this.apiUrl}?filtro=${encodeURIComponent(filtro)}`);
+    
+    if (!response.ok) {
+      console.error(`[UnamApiService] Error HTTP: ${response.status}`);
+      return [];
     }
+
+    const data = await response.json();
+
+    // Mapear los datos externos a LibroViewModel
+    return data.map((libro: any) => {
+      const model = new LibroModel(
+        libro.id,
+        libro.titulo,
+        libro.generoLiterario || libro.genero_literario || 'Sin género',
+        libro.portadaBase64 || libro.portada_base64 || '',
+        libro.pdfBase64 || libro.pdf_base64 || '', 
+        'UNAM',
+      );
+      return LibroViewModel.fromModel(model, true); // true = ES externo
+    });
+  } catch (error) {
+    console.error('[UnamApiService] Error al consultar API UNAM:', error);
+    return [];
   }
+}
 
   /**
    * Obtiene el PDF de un libro específico de la UNAM

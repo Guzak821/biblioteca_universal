@@ -25,7 +25,7 @@ let OxfordApiService = class OxfordApiService {
             const data = await response.json();
             return data.map((book) => {
                 const model = new LibroModel_1.LibroModel(book.id, book.title || book.titulo, book.genre || book.genero || 'Unknown', book.cover || book.portada || '', book.pdf || book.pdfBase64 || '', 'OXFORD');
-                return LibroViewModel_1.LibroViewModel.fromModel(model);
+                return LibroViewModel_1.LibroViewModel.fromModel(model, true);
             });
         }
         catch (error) {

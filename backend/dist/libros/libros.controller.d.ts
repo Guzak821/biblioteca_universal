@@ -11,6 +11,7 @@ export declare class LibrosController {
         universidadPropietaria: string;
         pdfBase64: string;
     }[]>;
+    search(filtro: string): Promise<import("./domain/view-model/LibroViewModel").LibroViewModel[]>;
     findOne(id: number): Promise<import("../libros/domain/models/LibroModel").LibroModel>;
     create(dto: CreateLibroDto): Promise<{
         success: boolean;
@@ -26,7 +27,6 @@ export declare class LibrosController {
         success: boolean;
         message: string;
     }>;
-    search(filtro: string): Promise<import("./domain/view-model/LibroViewModel").LibroViewModel[]>;
     getPdf(id: string, universidad: string, external: string): Promise<{
         pdfBase64: string;
     }>;

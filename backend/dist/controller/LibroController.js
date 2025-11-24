@@ -46,15 +46,17 @@ let LibroController = class LibroController {
     async handleSearchBooks(filtro) {
         console.log(`[LibroController] Búsqueda global con filtro: "${filtro}"`);
         const librosInternos = await this.libroDao.searchByFilter(filtro);
-        const viewModelsInternos = LibroViewModel_1.LibroViewModel.fromModelArray(librosInternos);
+        const viewModelsInternos = LibroViewModel_1.LibroViewModel.fromModelArray(librosInternos, false);
         const [librosUnam, librosOxford] = await Promise.all([
             this.unamApiService.searchBooks(filtro),
             this.oxfordApiService.searchBooks(filtro),
         ]);
+        const librosUnamMapped = librosUnam.map(libro => ({ ...libro, isExternal: true }));
+        const librosOxfordMapped = librosOxford.map(libro => ({ ...libro, isExternal: true }));
         const todosLosLibros = [
             ...viewModelsInternos,
-            ...librosUnam,
-            ...librosOxford,
+            ...librosUnamMapped,
+            ...librosOxfordMapped,
         ];
         console.log(`[LibroController] Total de libros encontrados: ${todosLosLibros.length}`);
         return todosLosLibros;

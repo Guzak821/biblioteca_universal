@@ -51,6 +51,19 @@ export class LibrosController {
     }
   }
 
+ @Get('search')
+  async search(@Query('filtro') filtro: string) {
+    try {
+      const libros = await this.libroController.handleSearchBooks(filtro || '');
+      return libros;
+    } catch (error) {
+      throw new HttpException(
+        'Error en la búsqueda',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   /**
    * GET /api/libros/:id
    * Obtener un libro por ID
@@ -163,20 +176,9 @@ export class LibrosController {
    * Búsqueda global (internos + externos)
    * Patrón: MVC > DAO + ApiService (DDD) > ViewModel (MVVM)
    */
-  @Get('search')
-  async search(@Query('filtro') filtro: string) {
-    try {
-      const libros = await this.libroController.handleSearchBooks(filtro || '');
-      return libros;
-    } catch (error) {
-      throw new HttpException(
-        'Error en la búsqueda',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
 
-  /**
+
+ /**
    * GET /api/libros/file/pdf  <-- RUTA MODIFICADA
    * Obtener PDF de un libro (interno o externo)
    * Patrón: MVC > DAO (interno) o ApiService (externo) > ViewModel
