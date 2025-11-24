@@ -2,7 +2,7 @@ import { LibroDao } from '../dao/LibroDao';
 import { LibroCqrs } from '../../aplication/mvc/LibroCqrs';
 import { LibroModel } from '../models/LibroModel';
 import { LibroViewModel } from '../view-model/LibroViewModel';
-import { ExternalApiService } from '../../infraestucture/api-service/ExternalApiService';
+import { ExternalApiService } from '../../infraestucture/api-service/UnamApiService';
 export declare class LibrosService {
     private readonly libroDao;
     private readonly libroCqrs;

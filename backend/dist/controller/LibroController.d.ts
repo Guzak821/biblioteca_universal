@@ -1,22 +1,20 @@
-import { LibrosService } from '../libros/domain/service/LibrosService';
-import { LibroModel } from '../libros/domain/models/LibroModel';
+import { LibroDao } from '../libros/domain/dao/LibroDao';
+import { LibroCqrs } from '../libros/aplication/mvc/LibroCqrs';
+import { LibroModel, CreateLibroDto, UpdateLibroDto } from '../libros/domain/models/LibroModel';
 import { LibroViewModel } from '../libros/domain/view-model/LibroViewModel';
-interface CreateBookDto extends Omit<LibroModel, 'id'> {
+import { UnamApiService } from '../libros/infraestucture/api-service/UnamApiService';
+import { OxfordApiService } from '../libros/infraestucture/api-service/OxfordApiService';
+export declare class LibroController {
+    private readonly libroDao;
+    private readonly libroCqrs;
+    private readonly unamApiService;
+    private readonly oxfordApiService;
+    constructor(libroDao: LibroDao, libroCqrs: LibroCqrs, unamApiService: UnamApiService, oxfordApiService: OxfordApiService);
+    handleGetAllInternalBooks(): Promise<LibroModel[]>;
+    handleGetBookById(id: number): Promise<LibroModel | null>;
+    handleCreateBook(dto: CreateLibroDto): Promise<LibroModel>;
+    handleUpdateBook(id: number, dto: UpdateLibroDto): Promise<LibroModel | null>;
+    handleDeleteBook(id: number): Promise<boolean>;
+    handleSearchBooks(filtro: string): Promise<LibroViewModel[]>;
+    handleGetPdfContent(libroId: string, universidad: string, isExternal: boolean): Promise<string | null>;
 }
-interface UpdateBookDto extends LibroModel {
-}
-export declare class LibrosController {
-    private readonly librosService;
-    constructor(librosService: LibrosService);
-    searchBooks(filtro: string): Promise<LibroViewModel[]>;
-    getPdf(id: string, universidad: string, external: string): Promise<{
-        pdfBase64: string;
-    }>;
-    findAllAdmin(): LibroModel[];
-    create(createBookDto: CreateBookDto): LibroModel;
-    update(id: string, updateBookDto: UpdateBookDto): LibroModel;
-    remove(id: string): {
-        message: string;
-    };
-}
-export {};

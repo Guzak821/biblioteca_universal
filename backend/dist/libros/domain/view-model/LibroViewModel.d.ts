@@ -1,14 +1,11 @@
 import { LibroModel } from '../models/LibroModel';
-export interface LibroViewModel {
+export declare class LibroViewModel {
+    id: number;
     titulo: string;
-    universidad: string;
-    genero: string;
+    generoLiterario: string;
     portadaBase64: string;
-    identificadorLibro: string | number;
-    identificadorUniversidad: string;
-    isExternal: boolean;
-}
-export declare class LibroViewModelMapper {
-    static mapInternalBook(model: LibroModel): LibroViewModel;
-    static mapExternalBook(externalData: any, universityId: string): LibroViewModel;
+    universidadPropietaria: string;
+    constructor(libro: LibroModel);
+    static fromModel(libro: LibroModel): LibroViewModel;
+    static fromModelArray(libros: LibroModel[]): LibroViewModel[];
 }

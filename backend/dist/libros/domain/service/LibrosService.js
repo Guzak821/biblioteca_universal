@@ -8,13 +8,14 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LibrosService = void 0;
 const common_1 = require("@nestjs/common");
 const LibroDao_1 = require("../dao/LibroDao");
 const LibroCqrs_1 = require("../../aplication/mvc/LibroCqrs");
 const LibroViewModel_1 = require("../view-model/LibroViewModel");
-const ExternalApiService_1 = require("../../infraestucture/api-service/ExternalApiService");
+const UnamApiService_1 = require("../../infraestucture/api-service/UnamApiService");
 let LibrosService = class LibrosService {
     constructor(libroDao, libroCqrs, externalApiService) {
         this.libroDao = libroDao;
@@ -45,7 +46,7 @@ let LibrosService = class LibrosService {
     }
     async getPdfContent(libroId, universidadId, isExternal) {
         if (isExternal) {
-            if (universidadId === ExternalApiService_1.ExternalApiService.UNIVERSITY_ID) {
+            if (universidadId === UnamApiService_1.ExternalApiService.UNIVERSITY_ID) {
                 return this.externalApiService.getBookPdf(libroId);
             }
             return null;
@@ -60,7 +61,6 @@ exports.LibrosService = LibrosService;
 exports.LibrosService = LibrosService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [LibroDao_1.LibroDao,
-        LibroCqrs_1.LibroCqrs,
-        ExternalApiService_1.ExternalApiService])
+        LibroCqrs_1.LibroCqrs, typeof (_a = typeof UnamApiService_1.ExternalApiService !== "undefined" && UnamApiService_1.ExternalApiService) === "function" ? _a : Object])
 ], LibrosService);
 //# sourceMappingURL=LibrosService.js.map

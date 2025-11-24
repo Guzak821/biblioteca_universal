@@ -1,8 +1,12 @@
-import { LibroModel } from '../../../libros/domain/models/LibroModel';
+import { Repository } from 'typeorm';
+import { LibroEntity } from '../../LibroEntity';
+import { LibroModel, CreateLibroDto, UpdateLibroDto } from '../../domain/models/LibroModel';
+import { LibroDao } from '../../domain/dao/LibroDao';
 export declare class LibroCqrs {
-    private libroDao;
-    constructor();
-    registerBook(book: Omit<LibroModel, 'id'>): LibroModel;
-    editBook(book: LibroModel): LibroModel | null;
-    deleteBook(id: number): boolean;
+    private readonly libroRepository;
+    private readonly libroDao;
+    constructor(libroRepository: Repository<LibroEntity>, libroDao: LibroDao);
+    createLibro(dto: CreateLibroDto): Promise<LibroModel>;
+    updateLibro(id: number, dto: UpdateLibroDto): Promise<LibroModel | null>;
+    deleteLibro(id: number): Promise<boolean>;
 }

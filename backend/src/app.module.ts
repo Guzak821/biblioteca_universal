@@ -8,7 +8,12 @@ import { databaseConfig } from './config/database.config';
 import { UsuariosModule } from './usuarios/UsuariosModule';
 
 @Module({
-  imports: [LibrosModule, TypeOrmModule.forRoot(databaseConfig), UsuariosModule, AuthModule],
+  imports: [
+    LibrosModule, 
+    TypeOrmModule.forRoot(databaseConfig),
+    UsuariosModule, 
+    AuthModule,
+    LibrosModule],
   controllers: [AppController],
   providers: [AppService],
 })

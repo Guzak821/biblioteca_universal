@@ -1,9 +1,11 @@
+import { Repository } from 'typeorm';
+import { LibroEntity } from '../../LibroEntity';
 import { LibroModel } from '../models/LibroModel';
 export declare class LibroDao {
-    findAll(): LibroModel[];
-    findLibrosByFiltro(filtro: string): LibroModel[];
-    findLibroById(id: number): LibroModel | null;
-    save(book: Omit<LibroModel, 'id'>): LibroModel;
-    update(book: LibroModel): LibroModel | null;
-    delete(id: number): boolean;
+    private readonly libroRepository;
+    constructor(libroRepository: Repository<LibroEntity>);
+    findAll(): Promise<LibroModel[]>;
+    findById(id: number): Promise<LibroModel | null>;
+    searchByFilter(filtro: string): Promise<LibroModel[]>;
+    existsByTitulo(titulo: string): Promise<boolean>;
 }

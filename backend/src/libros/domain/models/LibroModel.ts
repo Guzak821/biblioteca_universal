@@ -1,16 +1,46 @@
-// backend/src/libros/domain/models/LibroModel.ts
+/**
+ * LibroModel - Modelo de dominio
+ * Usado por DAO y CQRS (Modelo original de la BD)
+ */
+export class LibroModel {
+  id: number;
+  titulo: string;
+  generoLiterario: string;
+  portadaBase64: string;
+  pdfBase64: string;
+  universidadPropietaria: string;
+
+  constructor(
+    id: number,
+    titulo: string,
+    generoLiterario: string,
+    portadaBase64: string,
+    pdfBase64: string,
+    universidadPropietaria: string,
+  ) {
+    this.id = id;
+    this.titulo = titulo;
+    this.generoLiterario = generoLiterario;
+    this.portadaBase64 = portadaBase64;
+    this.pdfBase64 = pdfBase64;
+    this.universidadPropietaria = universidadPropietaria;
+  }
+}
 
 /**
- * Modelo que representa un libro en la BD INTERNA.
- * Se usa para las operaciones internas (DAO y CQRS).
- * Debe contener los campos solicitados: titulo, genero literario, portada y pdf.
+ * DTOs para crear y actualizar
  */
-export interface LibroModel {
+export class CreateLibroDto {
+  titulo: string;
+  generoLiterario: string;
+  portadaBase64: string;
+  pdfBase64: string;
   universidadPropietaria: string;
-  id: number; // Identificador único interno
-  titulo: string; // Título del libro
-  generoLiterario: string; // Género literario
-  portadaBase64: string; // Imagen de portada en base64 (o ruta/URL)
-  pdfBase64: string; // Contenido del PDF en base64 (o ruta/URL)
-  universidad: string; // Campo para identificar la fuente (Ej: 'UTL')
+}
+
+export class UpdateLibroDto {
+  titulo?: string;
+  generoLiterario?: string;
+  portadaBase64?: string;
+  pdfBase64?: string;
 }

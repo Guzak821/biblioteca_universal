@@ -1,61 +1,61 @@
 "use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LibroDao = void 0;
-const mockLibrosInternos = [
-    {
-        id: 101,
-        titulo: 'Álgebra de Baldor',
-        generoLiterario: 'Matemáticas',
-        portadaBase64: 'https://placehold.co/50x70/087990/ffffff?text=PORTADA_B',
-        pdfBase64: 'BASE64_PDF_COMPLETO_UTL_BALDOR',
-        universidadPropietaria: 'UTL',
-        universidad: ''
-    },
-    {
-        id: 102,
-        titulo: 'Introducción a la Biología',
-        generoLiterario: 'Biología',
-        portadaBase64: 'https://placehold.co/50x70/000000/ffffff?text=PORTADA_B',
-        pdfBase64: 'BASE64_PDF_COMPLETO_UTL_BIO',
-        universidadPropietaria: 'UTL',
-        universidad: ''
-    },
-];
-class LibroDao {
-    findAll() {
-        return mockLibrosInternos;
+const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
+const typeorm_2 = require("typeorm");
+const LibroEntity_1 = require("../../LibroEntity");
+const LibroModel_1 = require("../models/LibroModel");
+let LibroDao = class LibroDao {
+    constructor(libroRepository) {
+        this.libroRepository = libroRepository;
     }
-    findLibrosByFiltro(filtro) {
-        const filtroLower = filtro.toLowerCase();
-        return mockLibrosInternos.filter(libro => libro.titulo.toLowerCase().includes(filtroLower) ||
-            libro.generoLiterario.toLowerCase().includes(filtroLower));
+    async findAll() {
+        const entities = await this.libroRepository.find({
+            order: { id: 'ASC' },
+        });
+        return entities.map((e) => new LibroModel_1.LibroModel(e.id, e.titulo, e.generoLiterario, e.portadaBase64, e.pdfBase64, e.universidadPropietaria));
     }
-    findLibroById(id) {
-        const libro = mockLibrosInternos.find(libro => libro.id === id);
-        return libro ? libro : null;
+    async findById(id) {
+        const entity = await this.libroRepository.findOne({
+            where: { id },
+        });
+        if (!entity)
+            return null;
+        return new LibroModel_1.LibroModel(entity.id, entity.titulo, entity.generoLiterario, entity.portadaBase64, entity.pdfBase64, entity.universidadPropietaria);
     }
-    save(book) {
-        const newId = Math.floor(Math.random() * 1000) + 200;
-        const newBook = { id: newId, ...book };
-        mockLibrosInternos.push(newBook);
-        return newBook;
+    async searchByFilter(filtro) {
+        const entities = await this.libroRepository.find({
+            where: [
+                { titulo: (0, typeorm_2.Like)(`%${filtro}%`) },
+                { generoLiterario: (0, typeorm_2.Like)(`%${filtro}%`) },
+            ],
+        });
+        return entities.map((e) => new LibroModel_1.LibroModel(e.id, e.titulo, e.generoLiterario, e.portadaBase64, e.pdfBase64, e.universidadPropietaria));
     }
-    update(book) {
-        const index = mockLibrosInternos.findIndex((b) => b.id === book.id);
-        if (index !== -1) {
-            mockLibrosInternos[index] = book;
-            return mockLibrosInternos[index];
-        }
-        return null;
+    async existsByTitulo(titulo) {
+        const count = await this.libroRepository.count({
+            where: { titulo },
+        });
+        return count > 0;
     }
-    delete(id) {
-        const index = mockLibrosInternos.findIndex((b) => b.id === id);
-        if (index !== -1) {
-            mockLibrosInternos.splice(index, 1);
-            return true;
-        }
-        return false;
-    }
-}
+};
 exports.LibroDao = LibroDao;
+exports.LibroDao = LibroDao = __decorate([
+    (0, common_1.Injectable)(),
+    __param(0, (0, typeorm_1.InjectRepository)(LibroEntity_1.LibroEntity)),
+    __metadata("design:paramtypes", [typeorm_2.Repository])
+], LibroDao);
 //# sourceMappingURL=LibroDao.js.map

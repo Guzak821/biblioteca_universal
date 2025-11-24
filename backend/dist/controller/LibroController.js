@@ -8,96 +8,80 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LibrosController = void 0;
+exports.LibroController = void 0;
 const common_1 = require("@nestjs/common");
-const LibrosService_1 = require("../libros/domain/service/LibrosService");
-let LibrosController = class LibrosController {
-    constructor(librosService) {
-        this.librosService = librosService;
+const LibroDao_1 = require("../libros/domain/dao/LibroDao");
+const LibroCqrs_1 = require("../libros/aplication/mvc/LibroCqrs");
+const LibroViewModel_1 = require("../libros/domain/view-model/LibroViewModel");
+const UnamApiService_1 = require("../libros/infraestucture/api-service/UnamApiService");
+const OxfordApiService_1 = require("../libros/infraestucture/api-service/OxfordApiService");
+let LibroController = class LibroController {
+    constructor(libroDao, libroCqrs, unamApiService, oxfordApiService) {
+        this.libroDao = libroDao;
+        this.libroCqrs = libroCqrs;
+        this.unamApiService = unamApiService;
+        this.oxfordApiService = oxfordApiService;
     }
-    async searchBooks(filtro) {
-        return this.librosService.searchBooks(filtro || '');
+    async handleGetAllInternalBooks() {
+        console.log('[LibroController] Consultando libros internos');
+        return await this.libroDao.findAll();
     }
-    async getPdf(id, universidad, external) {
-        const isExternal = external === 'true';
-        const pdfBase64 = await this.librosService.getPdfContent(id, universidad, isExternal);
-        if (!pdfBase64) {
-            throw new common_1.HttpException('Libro o PDF no encontrado', common_1.HttpStatus.NOT_FOUND);
+    async handleGetBookById(id) {
+        console.log(`[LibroController] Consultando libro ID: ${id}`);
+        return await this.libroDao.findById(id);
+    }
+    async handleCreateBook(dto) {
+        console.log(`[LibroController] Creando libro: ${dto.titulo}`);
+        return await this.libroCqrs.createLibro(dto);
+    }
+    async handleUpdateBook(id, dto) {
+        console.log(`[LibroController] Actualizando libro ID: ${id}`);
+        return await this.libroCqrs.updateLibro(id, dto);
+    }
+    async handleDeleteBook(id) {
+        console.log(`[LibroController] Eliminando libro ID: ${id}`);
+        return await this.libroCqrs.deleteLibro(id);
+    }
+    async handleSearchBooks(filtro) {
+        console.log(`[LibroController] Búsqueda global con filtro: "${filtro}"`);
+        const librosInternos = await this.libroDao.searchByFilter(filtro);
+        const viewModelsInternos = LibroViewModel_1.LibroViewModel.fromModelArray(librosInternos);
+        const [librosUnam, librosOxford] = await Promise.all([
+            this.unamApiService.searchBooks(filtro),
+            this.oxfordApiService.searchBooks(filtro),
+        ]);
+        const todosLosLibros = [
+            ...viewModelsInternos,
+            ...librosUnam,
+            ...librosOxford,
+        ];
+        console.log(`[LibroController] Total de libros encontrados: ${todosLosLibros.length}`);
+        return todosLosLibros;
+    }
+    async handleGetPdfContent(libroId, universidad, isExternal) {
+        console.log(`[LibroController] Obteniendo PDF - ID: ${libroId}, Universidad: ${universidad}, Externo: ${isExternal}`);
+        if (!isExternal) {
+            const libro = await this.libroDao.findById(Number(libroId));
+            return libro ? libro.pdfBase64 : null;
         }
-        return { pdfBase64 };
-    }
-    findAllAdmin() {
-        return this.librosService.findAllInternalBooks();
-    }
-    create(createBookDto) {
-        return this.librosService.registerBook(createBookDto);
-    }
-    update(id, updateBookDto) {
-        const updatedBook = this.librosService.editBook({ ...updateBookDto, id: Number(id) });
-        if (!updatedBook) {
-            throw new common_1.HttpException('Libro no encontrado', common_1.HttpStatus.NOT_FOUND);
+        else {
+            if (universidad === 'UNAM') {
+                return await this.unamApiService.getPdf(libroId);
+            }
+            else if (universidad === 'OXFORD') {
+                return await this.oxfordApiService.getPdf(libroId);
+            }
+            return null;
         }
-        return updatedBook;
-    }
-    remove(id) {
-        const deleted = this.librosService.deleteBook(Number(id));
-        if (!deleted) {
-            throw new common_1.HttpException('Libro no encontrado', common_1.HttpStatus.NOT_FOUND);
-        }
-        return { message: `Libro con ID ${id} eliminado correctamente.` };
     }
 };
-exports.LibrosController = LibrosController;
-__decorate([
-    (0, common_1.Get)('search'),
-    __param(0, (0, common_1.Query)('filtro')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], LibrosController.prototype, "searchBooks", null);
-__decorate([
-    (0, common_1.Get)('pdf'),
-    __param(0, (0, common_1.Query)('id')),
-    __param(1, (0, common_1.Query)('universidad')),
-    __param(2, (0, common_1.Query)('external')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String]),
-    __metadata("design:returntype", Promise)
-], LibrosController.prototype, "getPdf", null);
-__decorate([
-    (0, common_1.Get)('admin'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Array)
-], LibrosController.prototype, "findAllAdmin", null);
-__decorate([
-    (0, common_1.Post)('admin'),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Object)
-], LibrosController.prototype, "create", null);
-__decorate([
-    (0, common_1.Put)('admin/:id'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", Object)
-], LibrosController.prototype, "update", null);
-__decorate([
-    (0, common_1.Delete)('admin/:id'),
-    __param(0, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Object)
-], LibrosController.prototype, "remove", null);
-exports.LibrosController = LibrosController = __decorate([
-    (0, common_1.Controller)('libros'),
-    __metadata("design:paramtypes", [LibrosService_1.LibrosService])
-], LibrosController);
+exports.LibroController = LibroController;
+exports.LibroController = LibroController = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [LibroDao_1.LibroDao,
+        LibroCqrs_1.LibroCqrs,
+        UnamApiService_1.UnamApiService,
+        OxfordApiService_1.OxfordApiService])
+], LibroController);
 //# sourceMappingURL=LibroController.js.map

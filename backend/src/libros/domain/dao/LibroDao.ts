@@ -1,78 +1,93 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Like } from 'typeorm';
+import { LibroEntity } from '../../LibroEntity';
 import { LibroModel } from '../models/LibroModel';
 
 /**
- * Simulación de los libros en la base de datos interna (UTL).
- * (Datos mock para simular la BD)
+ * LibroDao - Patrón DAO
+ * SOLO consultas (SELECT) a la base de datos
+ * NO debe tener modificaciones
  */
-const mockLibrosInternos: LibroModel[] = [
-  {
-    id: 101,
-    titulo: 'Álgebra de Baldor',
-    generoLiterario: 'Matemáticas',
-    portadaBase64: 'https://placehold.co/50x70/087990/ffffff?text=PORTADA_B',
-    pdfBase64: 'BASE64_PDF_COMPLETO_UTL_BALDOR', // Mock de PDF
-    universidadPropietaria: 'UTL',
-    universidad: ''
-  },
-  {
-    id: 102,
-    titulo: 'Introducción a la Biología',
-    generoLiterario: 'Biología',
-    portadaBase64: 'https://placehold.co/50x70/000000/ffffff?text=PORTADA_B',
-    pdfBase64: 'BASE64_PDF_COMPLETO_UTL_BIO',
-    universidadPropietaria: 'UTL',
-    universidad: ''
-  },
-];
-
-/**
- * Clase que maneja todas las consultas y modificaciones a los datos de Libro internos.
- * ÚNICO lugar donde debe haber lógica de consultas/persistencia a datos.
- */
+@Injectable()
 export class LibroDao {
-  
-  public findAll(): LibroModel[] {
-    return mockLibrosInternos;
-  }
-  
-  public findLibrosByFiltro(filtro: string): LibroModel[] {
-    const filtroLower = filtro.toLowerCase();
-    
-    return mockLibrosInternos.filter(libro =>
-      libro.titulo.toLowerCase().includes(filtroLower) || 
-      libro.generoLiterario.toLowerCase().includes(filtroLower)
+  constructor(
+    @InjectRepository(LibroEntity)
+    private readonly libroRepository: Repository<LibroEntity>,
+  ) {}
+
+  /**
+   * Consulta todos los libros internos
+   */
+  async findAll(): Promise<LibroModel[]> {
+    const entities = await this.libroRepository.find({
+      order: { id: 'ASC' },
+    });
+
+    return entities.map(
+      (e) =>
+        new LibroModel(
+          e.id,
+          e.titulo,
+          e.generoLiterario,
+          e.portadaBase64,
+          e.pdfBase64,
+          e.universidadPropietaria,
+        ),
     );
   }
 
-  public findLibroById(id: number): LibroModel | null {
-    const libro = mockLibrosInternos.find(libro => libro.id === id);
-    return libro ? libro : null;
+  /**
+   * Consulta un libro por ID
+   */
+  async findById(id: number): Promise<LibroModel | null> {
+    const entity = await this.libroRepository.findOne({
+      where: { id },
+    });
+
+    if (!entity) return null;
+
+    return new LibroModel(
+      entity.id,
+      entity.titulo,
+      entity.generoLiterario,
+      entity.portadaBase64,
+      entity.pdfBase64,
+      entity.universidadPropietaria,
+    );
   }
 
-  // --- MÉTODOS DE MODIFICACIÓN (Usados por CQRS) ---
+  /**
+   * Busca libros por filtro (título o género)
+   */
+  async searchByFilter(filtro: string): Promise<LibroModel[]> {
+    const entities = await this.libroRepository.find({
+      where: [
+        { titulo: Like(`%${filtro}%`) },
+        { generoLiterario: Like(`%${filtro}%`) },
+      ],
+    });
 
-  public save(book: Omit<LibroModel, 'id'>): LibroModel {
-    const newId = Math.floor(Math.random() * 1000) + 200;
-    const newBook: LibroModel = { id: newId, ...book };
-    mockLibrosInternos.push(newBook);
-    return newBook;
+    return entities.map(
+      (e) =>
+        new LibroModel(
+          e.id,
+          e.titulo,
+          e.generoLiterario,
+          e.portadaBase64,
+          e.pdfBase64,
+          e.universidadPropietaria,
+        ),
+    );
   }
 
-  public update(book: LibroModel): LibroModel | null {
-    const index = mockLibrosInternos.findIndex((b) => b.id === book.id);
-    if (index !== -1) {
-      mockLibrosInternos[index] = book;
-      return mockLibrosInternos[index];
-    }
-    return null;
-  }
-
-  public delete(id: number): boolean {
-    const index = mockLibrosInternos.findIndex((b) => b.id === id);
-    if (index !== -1) {
-      mockLibrosInternos.splice(index, 1);
-      return true;
-    }
-    return false;
+  /**
+   * Verifica si un libro existe por título
+   */
+  async existsByTitulo(titulo: string): Promise<boolean> {
+    const count = await this.libroRepository.count({
+      where: { titulo },
+    });
+    return count > 0;
   }
 }
