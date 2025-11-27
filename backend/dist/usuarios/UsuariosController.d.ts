@@ -1,5 +1,5 @@
 import { UsuarioController } from '../controller/UsuarioController';
-import { CreateUsuarioDto, UpdateUsuarioDto } from './UsuarioModel';
+import { CreateUsuarioDto, UpdateUsuarioDto } from './domain/model/UsuarioModel';
 export declare class UsuariosController {
     private readonly usuarioController;
     constructor(usuarioController: UsuarioController);

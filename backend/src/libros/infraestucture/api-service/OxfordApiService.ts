@@ -5,10 +5,71 @@ import { LibroModel } from '../../domain/models/LibroModel';
 /**
  * OxfordApiService - Patrón DDD (Infraestructura)
  * Maneja la conexión con la API externa de Oxford
- */
+ */ 
 @Injectable()
 export class OxfordApiService {
-  private readonly apiUrl = 'http://localhost:3002/api/books'; // URL de otro compañero
+  private readonly apiUrl = 'http://192.168.137.1:8079/Cambridge/biblioteca/libro/getAllLibro'; // URL de otro compañero
+
+  /**
+   * Función auxiliar para limpiar base64
+   */
+  private cleanBase64(base64String: string | null): string | null {
+    if (!base64String) return null;
+
+    try {
+      let cleaned = base64String;
+      
+      // Remover prefijo data: si existe
+      if (cleaned.startsWith('data:')) {
+        cleaned = cleaned.split(',')[1];
+      }
+
+      // Remover espacios, saltos de línea, tabulaciones
+      cleaned = cleaned.replace(/\s/g, '');
+
+      // Validar que sea base64 válido
+      const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+      if (!base64Regex.test(cleaned)) {
+        console.error('[OxfordApiService] Base64 inválido');
+        return null;
+      }
+
+      return cleaned;
+    } catch (error) {
+      console.error('[OxfordApiService] Error al limpiar base64:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Función auxiliar para convertir URL de PDF a base64
+   */
+  private async convertPdfUrlToBase64(pdfUrl: string): Promise<string | null> {
+    try {
+      console.log(`[OxfordApiService] Descargando PDF desde: ${pdfUrl}`);
+
+      const response = await fetch(pdfUrl);
+      
+      if (!response.ok) {
+        console.error(`[OxfordApiService] Error al descargar PDF: ${response.status}`);
+        return null;
+      }
+
+      // Obtener el PDF como buffer
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      
+      // Convertir a base64
+      const base64 = buffer.toString('base64');
+      
+      console.log(`[OxfordApiService] PDF convertido a base64 - Tamaño: ${base64.length} caracteres`);
+      
+      return this.cleanBase64(base64);
+    } catch (error) {
+      console.error('[OxfordApiService] Error al convertir PDF a base64:', error);
+      return null;
+    }
+  }
 
   /**
    * Busca libros en la API de Oxford
@@ -29,15 +90,17 @@ export class OxfordApiService {
       // Mapear los datos externos a LibroViewModel
       return data.map((book: any) => {
         const model = new LibroModel(
-          book.id,
-          book.title || book.titulo,
-          book.genre || book.genero || 'Unknown',
-          book.cover || book.portada || '',
-          book.pdf || book.pdfBase64 || '',
+          book.uuid,                           // ✔ usa uuid
+          book.bookTitle,                      // ✔ nombre correcto
+          book.genre || 'Unknown',
+          book.bookCover || '',
+          book.pdfUrl || '',                   // ✔ Guardamos la URL (la conversión se hace en getPdf)
           'OXFORD',
         );
-        return LibroViewModel.fromModel(model, true); // true = ES externo
+
+        return LibroViewModel.fromModel(model, true);
       });
+
     } catch (error) {
       console.error('[OxfordApiService] Error al consultar API Oxford:', error);
       return [];
@@ -46,22 +109,41 @@ export class OxfordApiService {
 
   /**
    * Obtiene el PDF de un libro específico de Oxford
+   * MEJORADO: Convierte la URL del PDF a base64
    */
   async getPdf(bookId: string): Promise<string | null> {
     try {
       console.log(`[OxfordApiService] Obteniendo PDF del libro ID: ${bookId}`);
 
-      const response = await fetch(`${this.apiUrl}/${bookId}/pdf`);
+      // 1. Obtener todos los libros
+      const response = await fetch(this.apiUrl);
       
       if (!response.ok) {
-        console.error(`[OxfordApiService] Error al obtener PDF: ${response.status}`);
+        console.error(`[OxfordApiService] Error HTTP: ${response.status}`);
         return null;
       }
 
       const data = await response.json();
-      return data.pdf || data.pdfBase64 || null;
+
+      // 2. Buscar el libro por UUID
+      const book = data.find((b: any) => b.uuid === bookId);
+
+      if (!book) {
+        console.error("[OxfordApiService] Libro no encontrado");
+        return null;
+      }
+
+      // 3. Si tiene pdfUrl, convertirlo a base64
+      if (book.pdfUrl) {
+        console.log(`[OxfordApiService] Convirtiendo PDF de URL a base64...`);
+        return await this.convertPdfUrlToBase64(book.pdfUrl);
+      }
+
+      console.error("[OxfordApiService] El libro no tiene pdfUrl");
+      return null;
+
     } catch (error) {
-      console.error('[OxfordApiService] Error al obtener PDF:', error);
+      console.error("[OxfordApiService] Error al obtener PDF:", error);
       return null;
     }
   }

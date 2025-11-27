@@ -11,8 +11,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsuarioController = void 0;
 const common_1 = require("@nestjs/common");
-const UsuarioDao_1 = require("../usuarios/UsuarioDao");
-const UsuarioCqrs_1 = require("../usuarios/UsuarioCqrs");
+const UsuarioDao_1 = require("../usuarios/domain/dao/UsuarioDao");
+const UsuarioCqrs_1 = require("../usuarios/aplication/mvc/UsuarioCqrs");
 const bcrypt = require("bcrypt");
 let UsuarioController = class UsuarioController {
     constructor(usuarioDao, usuarioCqrs) {

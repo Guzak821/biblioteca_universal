@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsuariosController = void 0;
 const common_1 = require("@nestjs/common");
 const UsuarioController_1 = require("../controller/UsuarioController");
-const UsuarioModel_1 = require("./UsuarioModel");
+const UsuarioModel_1 = require("./domain/model/UsuarioModel");
 let UsuariosController = class UsuariosController {
     constructor(usuarioController) {
         this.usuarioController = usuarioController;

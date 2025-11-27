@@ -12,7 +12,28 @@ const LibroViewModel_1 = require("../../domain/view-model/LibroViewModel");
 const LibroModel_1 = require("../../domain/models/LibroModel");
 let UnamApiService = class UnamApiService {
     constructor() {
-        this.apiUrl = 'http://localhost:3001/api/libros';
+        this.apiUrl = 'http://192.168.137.206:3000/libros';
+    }
+    cleanBase64(base64String) {
+        if (!base64String)
+            return null;
+        try {
+            let cleaned = base64String;
+            if (cleaned.startsWith('data:')) {
+                cleaned = cleaned.split(',')[1];
+            }
+            cleaned = cleaned.replace(/\s/g, '');
+            const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+            if (!base64Regex.test(cleaned)) {
+                console.error('[UnamApiService] Base64 inválido');
+                return null;
+            }
+            return cleaned;
+        }
+        catch (error) {
+            console.error('[UnamApiService] Error al limpiar base64:', error);
+            return null;
+        }
     }
     async searchBooks(filtro) {
         try {
@@ -42,7 +63,21 @@ let UnamApiService = class UnamApiService {
                 return null;
             }
             const data = await response.json();
-            return data.pdfBase64 || data.pdf_base64 || null;
+            const pdfBase64 = data.pdfBase64 || data.pdf_base64 || null;
+            if (!pdfBase64) {
+                console.error('[UnamApiService] No se encontró el PDF en la respuesta');
+                return null;
+            }
+            const cleanedBase64 = this.cleanBase64(pdfBase64);
+            if (cleanedBase64) {
+                console.log(`[UnamApiService] PDF limpio - Tamaño: ${cleanedBase64.length} caracteres`);
+                console.log(`[UnamApiService] Primeros 50 chars: ${cleanedBase64.substring(0, 50)}`);
+                console.log(`[UnamApiService] Últimos 50 chars: ${cleanedBase64.substring(cleanedBase64.length - 50)}`);
+            }
+            else {
+                console.error('[UnamApiService] El base64 no es válido después de limpiarlo');
+            }
+            return cleanedBase64;
         }
         catch (error) {
             console.error('[UnamApiService] Error al obtener PDF:', error);

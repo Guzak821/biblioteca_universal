@@ -11,7 +11,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { UsuarioController } from '../controller/UsuarioController';
-import { CreateUsuarioDto, UpdateUsuarioDto } from './UsuarioModel';
+import { CreateUsuarioDto, UpdateUsuarioDto } from './domain/model/UsuarioModel';
 
 /**
  * UsuariosController - API REST para CRUD de usuarios

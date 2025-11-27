@@ -1,8 +1,8 @@
 import { Module, OnModuleInit } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsuarioEntity } from './usuario.entity';
-import { UsuarioDao } from '../usuarios/UsuarioDao';
-import { UsuarioCqrs } from './UsuarioCqrs';
+import { UsuarioDao } from '../usuarios/domain/dao/UsuarioDao';
+import { UsuarioCqrs } from './aplication/mvc/UsuarioCqrs';
 import { UsuarioController } from '../controller/UsuarioController';
 import { UsuariosController } from '../usuarios/UsuariosController';
 import { Repository } from 'typeorm';

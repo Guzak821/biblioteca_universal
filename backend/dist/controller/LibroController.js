@@ -23,6 +23,31 @@ let LibroController = class LibroController {
         this.unamApiService = unamApiService;
         this.oxfordApiService = oxfordApiService;
     }
+    cleanBase64(base64String) {
+        if (!base64String)
+            return null;
+        try {
+            let cleaned = base64String;
+            if (cleaned.startsWith('data:')) {
+                cleaned = cleaned.split(',')[1];
+            }
+            cleaned = cleaned.replace(/\s/g, '');
+            const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+            if (!base64Regex.test(cleaned)) {
+                console.error('[LibroController] Base64 inválido detectado');
+                return null;
+            }
+            if (cleaned.length < 100) {
+                console.error('[LibroController] Base64 demasiado corto');
+                return null;
+            }
+            return cleaned;
+        }
+        catch (error) {
+            console.error('[LibroController] Error al limpiar base64:', error);
+            return null;
+        }
+    }
     async handleGetAllInternalBooks() {
         console.log('[LibroController] Consultando libros internos');
         return await this.libroDao.findAll();
@@ -63,18 +88,36 @@ let LibroController = class LibroController {
     }
     async handleGetPdfContent(libroId, universidad, isExternal) {
         console.log(`[LibroController] Obteniendo PDF - ID: ${libroId}, Universidad: ${universidad}, Externo: ${isExternal}`);
-        if (!isExternal) {
-            const libro = await this.libroDao.findById(Number(libroId));
-            return libro ? libro.pdfBase64 : null;
+        let pdfBase64 = null;
+        try {
+            if (!isExternal) {
+                const libro = await this.libroDao.findById(Number(libroId));
+                pdfBase64 = libro ? libro.pdfBase64 : null;
+            }
+            else {
+                if (universidad === 'UNAM') {
+                    console.log('[LibroController] Obteniendo PDF de UNAM...');
+                    pdfBase64 = await this.unamApiService.getPdf(libroId);
+                }
+                else if (universidad === 'OXFORD') {
+                    console.log('[LibroController] Obteniendo PDF de OXFORD...');
+                    pdfBase64 = await this.oxfordApiService.getPdf(libroId);
+                }
+            }
+            const cleanedBase64 = this.cleanBase64(pdfBase64);
+            if (cleanedBase64) {
+                console.log(`[LibroController] PDF limpio - Longitud: ${cleanedBase64.length} caracteres`);
+                console.log(`[LibroController] Primeros 50 chars: ${cleanedBase64.substring(0, 50)}`);
+                console.log(`[LibroController] Últimos 50 chars: ${cleanedBase64.substring(cleanedBase64.length - 50)}`);
+            }
+            else {
+                console.error('[LibroController] No se pudo limpiar el base64 o está vacío');
+            }
+            return cleanedBase64;
         }
-        else {
-            if (universidad === 'UNAM') {
-                return await this.unamApiService.getPdf(libroId);
-            }
-            else if (universidad === 'OXFORD') {
-                return await this.oxfordApiService.getPdf(libroId);
-            }
-            return null;
+        catch (error) {
+            console.error('[LibroController] Error al obtener PDF:', error);
+            throw error;
         }
     }
 };

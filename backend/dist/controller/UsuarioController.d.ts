@@ -1,6 +1,6 @@
-import { UsuarioDao } from '../usuarios/UsuarioDao';
-import { UsuarioCqrs } from '../usuarios/UsuarioCqrs';
-import { UsuarioModel, CreateUsuarioDto, UpdateUsuarioDto } from '../usuarios/UsuarioModel';
+import { UsuarioDao } from '../usuarios/domain/dao/UsuarioDao';
+import { UsuarioCqrs } from '../usuarios/aplication/mvc/UsuarioCqrs';
+import { UsuarioModel, CreateUsuarioDto, UpdateUsuarioDto } from '../usuarios/domain/model/UsuarioModel';
 export declare class UsuarioController {
     private readonly usuarioDao;
     private readonly usuarioCqrs;

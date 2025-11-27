@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UsuarioEntity } from '../usuarios/usuario.entity';
-import { UsuarioModel } from '../usuarios/UsuarioModel';
+import { UsuarioEntity } from '../../usuario.entity';
+import { UsuarioModel } from '../model/UsuarioModel';
 
 /**
  * UsuarioDao - Patrón DAO con TypeORM

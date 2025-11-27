@@ -8,11 +8,11 @@ async function bootstrap() {
     app.use(express.json({ limit: '50mb' }));
     app.use(express.urlencoded({ limit: '50mb', extended: true }));
     app.enableCors({
-        origin: 'http://localhost:5173',
+        origin: 'http://192.168.137.11:5173',
         credentials: true,
     });
-    await app.listen(process.env.PORT ?? 3000);
-    console.log(`🚀 Backend corriendo en http://localhost:${process.env.PORT ?? 3000}`);
+    await app.listen(3003, '0.0.0.0');
+    console.log('API disponible en: http://0.0.0.0:3003');
 }
 bootstrap();
 //# sourceMappingURL=main.js.map

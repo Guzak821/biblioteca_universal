@@ -10,6 +10,7 @@ export declare class LibroController {
     private readonly unamApiService;
     private readonly oxfordApiService;
     constructor(libroDao: LibroDao, libroCqrs: LibroCqrs, unamApiService: UnamApiService, oxfordApiService: OxfordApiService);
+    private cleanBase64;
     handleGetAllInternalBooks(): Promise<LibroModel[]>;
     handleGetBookById(id: number): Promise<LibroModel | null>;
     handleCreateBook(dto: CreateLibroDto): Promise<LibroModel>;

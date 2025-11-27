@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UsuarioEntity } from './usuario.entity';
-import { UsuarioModel, CreateUsuarioDto, UpdateUsuarioDto } from './UsuarioModel';
-import { UsuarioDao } from '../usuarios/UsuarioDao';
+import { UsuarioEntity } from '../../usuario.entity';
+import { UsuarioModel, CreateUsuarioDto, UpdateUsuarioDto } from '../../domain/model/UsuarioModel';
+import { UsuarioDao } from '../../domain/dao/UsuarioDao';
 import * as bcrypt from 'bcrypt';
 
 /**

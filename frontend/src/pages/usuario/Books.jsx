@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Search, FileText, BookOpen, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE LA API ---
-const API_BASE_URL = 'http://localhost:3000/api/libros';
+//const API_BASE_URL = 'http://localhost:3000/api/libros';
+const API_BASE_URL = 'http://192.168.137.11:3003/api/libros';
 const PDF_API_URL = `${API_BASE_URL}/file/pdf`;
 
 const EMPTY_BOOK_DATA = {

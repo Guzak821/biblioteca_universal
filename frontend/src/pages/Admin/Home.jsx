@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Search, FileText, Globe, BookOpen } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE LA API (Debe coincidir con BooksApp.jsx) ---
-const API_BASE_URL = 'http://localhost:3000/api/libros'; 
+const API_BASE_URL = 'http://localhost:3003/api/libros'; 
 const PDF_API_URL = `${API_BASE_URL}/file/pdf`; 
 
 const EMPTY_BOOK_DATA = {
@@ -10,21 +10,42 @@ const EMPTY_BOOK_DATA = {
 };
 
 // --- FUNCIÓN AUXILIAR: BASE64 a Blob (para visualizar PDF) ---
+// --- FUNCIÓN AUXILIAR: BASE64 a Blob (para visualizar PDF) ---
 const b64toBlob = (b64Data, contentType = '', sliceSize = 512) => {
-    const base64 = b64Data.startsWith('data:') ? b64Data.split(',')[1] : b64Data;
-    const byteCharacters = atob(base64);
-    const byteArrays = [];
-
-    for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-        const slice = byteCharacters.slice(offset, offset + sliceSize);
-        const byteNumbers = new Array(slice.length);
-        for (let i = 0; i < slice.length; i++) {
-            byteNumbers[i] = slice.charCodeAt(i);
+    try {
+        // Limpiar la cadena base64
+        let base64 = b64Data;
+        
+        // Remover el prefijo data: si existe
+        if (base64.startsWith('data:')) {
+            base64 = base64.split(',')[1];
         }
-        const byteArray = new Uint8Array(byteNumbers);
-        byteArrays.push(byteArray);
+        
+        // Limpiar espacios en blanco y saltos de línea
+        base64 = base64.replace(/\s/g, '');
+        
+        // Validar que sea base64 válido
+        if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) {
+            throw new Error('Cadena base64 inválida');
+        }
+        
+        const byteCharacters = atob(base64);
+        const byteArrays = [];
+
+        for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+            const slice = byteCharacters.slice(offset, offset + sliceSize);
+            const byteNumbers = new Array(slice.length);
+            for (let i = 0; i < slice.length; i++) {
+                byteNumbers[i] = slice.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            byteArrays.push(byteArray);
+        }
+        return new Blob(byteArrays, { type: contentType });
+    } catch (error) {
+        console.error('Error al convertir base64 a blob:', error);
+        throw new Error('No se pudo decodificar el PDF. El formato base64 no es válido.');
     }
-    return new Blob(byteArrays, { type: contentType });
 };
 
 // Función auxiliar para obtener la URL de visualización de la portada

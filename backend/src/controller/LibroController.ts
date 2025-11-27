@@ -22,6 +22,42 @@ export class LibroController {
   ) {}
 
   /**
+   * Función auxiliar para limpiar y validar base64
+   */
+  private cleanBase64(base64String: string | null): string | null {
+    if (!base64String) return null;
+
+    try {
+      // Remover el prefijo data: si existe
+      let cleaned = base64String;
+      if (cleaned.startsWith('data:')) {
+        cleaned = cleaned.split(',')[1];
+      }
+
+      // Remover espacios en blanco, saltos de línea, tabulaciones
+      cleaned = cleaned.replace(/\s/g, '');
+
+      // Validar que sea base64 válido (solo caracteres A-Z, a-z, 0-9, +, /, =)
+      const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+      if (!base64Regex.test(cleaned)) {
+        console.error('[LibroController] Base64 inválido detectado');
+        return null;
+      }
+
+      // Validar longitud mínima
+      if (cleaned.length < 100) {
+        console.error('[LibroController] Base64 demasiado corto');
+        return null;
+      }
+
+      return cleaned;
+    } catch (error) {
+      console.error('[LibroController] Error al limpiar base64:', error);
+      return null;
+    }
+  }
+
+  /**
    * Obtener todos los libros internos (para CRUD Bibliotecario)
    * Flujo: MVC > DAO
    */
@@ -75,36 +111,37 @@ export class LibroController {
    * Implementa patrones: MVC, DDD, MVVM, DAO
    */
   async handleSearchBooks(filtro: string): Promise<LibroViewModel[]> {
-  console.log(`[LibroController] Búsqueda global con filtro: "${filtro}"`);
+    console.log(`[LibroController] Búsqueda global con filtro: "${filtro}"`);
 
-  // 1. Consultar libros internos usando DAO
-  const librosInternos = await this.libroDao.searchByFilter(filtro);
-  const viewModelsInternos = LibroViewModel.fromModelArray(librosInternos, false); // false = NO es externo
+    // 1. Consultar libros internos usando DAO
+    const librosInternos = await this.libroDao.searchByFilter(filtro);
+    const viewModelsInternos = LibroViewModel.fromModelArray(librosInternos, false); // false = NO es externo
 
-  // 2. Consultar libros externos usando ApiService (DDD)
-  const [librosUnam, librosOxford] = await Promise.all([
-    this.unamApiService.searchBooks(filtro),
-    this.oxfordApiService.searchBooks(filtro),
-  ]);
+    // 2. Consultar libros externos usando ApiService (DDD)
+    const [librosUnam, librosOxford] = await Promise.all([
+      this.unamApiService.searchBooks(filtro),
+      this.oxfordApiService.searchBooks(filtro),
+    ]);
 
-  // 3. Marcar los libros externos con isExternal = true
-  const librosUnamMapped = librosUnam.map(libro => ({ ...libro, isExternal: true })); 
-  const librosOxfordMapped = librosOxford.map(libro => ({ ...libro, isExternal: true })); 
+    // 3. Marcar los libros externos con isExternal = true
+    const librosUnamMapped = librosUnam.map(libro => ({ ...libro, isExternal: true })); 
+    const librosOxfordMapped = librosOxford.map(libro => ({ ...libro, isExternal: true })); 
 
-  // 4. Unir resultados (internos + externos)
-  const todosLosLibros = [
-    ...viewModelsInternos,
-    ...librosUnamMapped,
-    ...librosOxfordMapped,
-  ];
+    // 4. Unir resultados (internos + externos)
+    const todosLosLibros = [
+      ...viewModelsInternos,
+      ...librosUnamMapped,
+      ...librosOxfordMapped,
+    ];
 
-  console.log(`[LibroController] Total de libros encontrados: ${todosLosLibros.length}`);
-  return todosLosLibros;
-}
+    console.log(`[LibroController] Total de libros encontrados: ${todosLosLibros.length}`);
+    return todosLosLibros;
+  }
 
   /**
    * Obtener contenido PDF de un libro
    * Flujo: MVC > DAO (si es interno) o ApiService (si es externo) > ViewModel
+   * MEJORADO: Limpia y valida el base64 antes de retornarlo
    */
   async handleGetPdfContent(
     libroId: string,
@@ -115,18 +152,40 @@ export class LibroController {
       `[LibroController] Obteniendo PDF - ID: ${libroId}, Universidad: ${universidad}, Externo: ${isExternal}`,
     );
 
-    if (!isExternal) {
-      // Libro interno - usar DAO
-      const libro = await this.libroDao.findById(Number(libroId));
-      return libro ? libro.pdfBase64 : null;
-    } else {
-      // Libro externo - usar ApiService (DDD)
-      if (universidad === 'UNAM') {
-        return await this.unamApiService.getPdf(libroId);
-      } else if (universidad === 'OXFORD') {
-        return await this.oxfordApiService.getPdf(libroId);
+    let pdfBase64: string | null = null;
+
+    try {
+      if (!isExternal) {
+        // Libro interno - usar DAO
+        const libro = await this.libroDao.findById(Number(libroId));
+        pdfBase64 = libro ? libro.pdfBase64 : null;
+      } else {
+        // Libro externo - usar ApiService (DDD)
+        if (universidad === 'UNAM') {
+          console.log('[LibroController] Obteniendo PDF de UNAM...');
+          pdfBase64 = await this.unamApiService.getPdf(libroId);
+        } else if (universidad === 'OXFORD') {
+          console.log('[LibroController] Obteniendo PDF de OXFORD...');
+          pdfBase64 = await this.oxfordApiService.getPdf(libroId);
+        }
       }
-      return null;
+
+      // IMPORTANTE: Limpiar el base64 antes de retornarlo
+      const cleanedBase64 = this.cleanBase64(pdfBase64);
+
+      if (cleanedBase64) {
+        console.log(`[LibroController] PDF limpio - Longitud: ${cleanedBase64.length} caracteres`);
+        console.log(`[LibroController] Primeros 50 chars: ${cleanedBase64.substring(0, 50)}`);
+        console.log(`[LibroController] Últimos 50 chars: ${cleanedBase64.substring(cleanedBase64.length - 50)}`);
+      } else {
+        console.error('[LibroController] No se pudo limpiar el base64 o está vacío');
+      }
+
+      return cleanedBase64;
+
+    } catch (error) {
+      console.error('[LibroController] Error al obtener PDF:', error);
+      throw error;
     }
   }
 }
