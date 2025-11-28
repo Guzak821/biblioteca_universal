@@ -38,11 +38,29 @@ let LibrosController = class LibrosController {
     }
     async search(filtro) {
         try {
+            console.log(`[LibrosController] Endpoint /search llamado con filtro: "${filtro}"`);
             const libros = await this.libroController.handleSearchBooks(filtro || '');
+            console.log(`[LibrosController] Retornando ${libros.length} libros`);
             return libros;
         }
         catch (error) {
+            console.error('[LibrosController] Error en búsqueda:', error);
             throw new common_1.HttpException('Error en la búsqueda', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    async getPdf(id, universidad, external) {
+        try {
+            const isExternal = external === 'true';
+            const pdfBase64 = await this.libroController.handleGetPdfContent(id, universidad, isExternal);
+            if (!pdfBase64) {
+                throw new common_1.HttpException('PDF no encontrado', common_1.HttpStatus.NOT_FOUND);
+            }
+            return { pdfBase64 };
+        }
+        catch (error) {
+            if (error instanceof common_1.HttpException)
+                throw error;
+            throw new common_1.HttpException('Error al obtener PDF', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
     async findOne(id) {
@@ -107,21 +125,6 @@ let LibrosController = class LibrosController {
             throw new common_1.HttpException('Error al eliminar libro', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    async getPdf(id, universidad, external) {
-        try {
-            const isExternal = external === 'true';
-            const pdfBase64 = await this.libroController.handleGetPdfContent(id, universidad, isExternal);
-            if (!pdfBase64) {
-                throw new common_1.HttpException('PDF no encontrado', common_1.HttpStatus.NOT_FOUND);
-            }
-            return { pdfBase64 };
-        }
-        catch (error) {
-            if (error instanceof common_1.HttpException)
-                throw error;
-            throw new common_1.HttpException('Error al obtener PDF', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
 };
 exports.LibrosController = LibrosController;
 __decorate([
@@ -137,6 +140,15 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], LibrosController.prototype, "search", null);
+__decorate([
+    (0, common_1.Get)('file/pdf'),
+    __param(0, (0, common_1.Query)('id')),
+    __param(1, (0, common_1.Query)('universidad')),
+    __param(2, (0, common_1.Query)('external')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:returntype", Promise)
+], LibrosController.prototype, "getPdf", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
@@ -166,15 +178,6 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], LibrosController.prototype, "remove", null);
-__decorate([
-    (0, common_1.Get)('file/pdf'),
-    __param(0, (0, common_1.Query)('id')),
-    __param(1, (0, common_1.Query)('universidad')),
-    __param(2, (0, common_1.Query)('external')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String]),
-    __metadata("design:returntype", Promise)
-], LibrosController.prototype, "getPdf", null);
 exports.LibrosController = LibrosController = __decorate([
     (0, common_1.Controller)('api/libros'),
     __metadata("design:paramtypes", [LibroController_1.LibroController])

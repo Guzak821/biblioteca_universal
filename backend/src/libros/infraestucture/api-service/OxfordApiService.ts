@@ -86,16 +86,31 @@ export class OxfordApiService {
       }
 
       const data = await response.json();
+      
+      console.log(`[OxfordApiService] Cantidad de libros recibidos: ${data.length}`);
 
       // Mapear los datos externos a LibroViewModel
       return data.map((book: any) => {
+        // Limpiar el base64 de la portada si viene
+        let cleanBookCover = book.bookCover || '';
+        
+        // Si la portada viene en base64, limpiarla
+        if (cleanBookCover && !cleanBookCover.startsWith('http')) {
+          // Asegurar que tenga el prefijo data: para imágenes
+          if (!cleanBookCover.startsWith('data:')) {
+            cleanBookCover = `data:image/jpeg;base64,${cleanBookCover}`;
+          }
+        }
+
+        console.log(`[OxfordApiService] Mapeando libro: ${book.bookTitle} - UUID: ${book.uuid}`);
+
         const model = new LibroModel(
-          book.uuid,                           // ✔ usa uuid
-          book.bookTitle,                      // ✔ nombre correcto
-          book.genre || 'Unknown',
-          book.bookCover || '',
-          book.pdfUrl || '',                   // ✔ Guardamos la URL (la conversión se hace en getPdf)
-          'OXFORD',
+          book.uuid,                           // UUID
+          book.bookTitle,                      // Título
+          book.genre || 'Unknown',             // Género
+          cleanBookCover,                      // Portada en base64 (limpia)
+          book.pdfUrl || '',                   // URL del PDF
+          'OXFORD',                            // Universidad
         );
 
         return LibroViewModel.fromModel(model, true);

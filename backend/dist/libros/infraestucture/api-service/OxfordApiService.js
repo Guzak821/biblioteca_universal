@@ -63,8 +63,16 @@ let OxfordApiService = class OxfordApiService {
                 return [];
             }
             const data = await response.json();
+            console.log(`[OxfordApiService] Cantidad de libros recibidos: ${data.length}`);
             return data.map((book) => {
-                const model = new LibroModel_1.LibroModel(book.uuid, book.bookTitle, book.genre || 'Unknown', book.bookCover || '', book.pdfUrl || '', 'OXFORD');
+                let cleanBookCover = book.bookCover || '';
+                if (cleanBookCover && !cleanBookCover.startsWith('http')) {
+                    if (!cleanBookCover.startsWith('data:')) {
+                        cleanBookCover = `data:image/jpeg;base64,${cleanBookCover}`;
+                    }
+                }
+                console.log(`[OxfordApiService] Mapeando libro: ${book.bookTitle} - UUID: ${book.uuid}`);
+                const model = new LibroModel_1.LibroModel(book.uuid, book.bookTitle, book.genre || 'Unknown', cleanBookCover, book.pdfUrl || '', 'OXFORD');
                 return LibroViewModel_1.LibroViewModel.fromModel(model, true);
             });
         }
