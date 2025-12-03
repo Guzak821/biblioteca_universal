@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 
 // --- 1. CONFIGURACIÓN DE API ---
 //const API_BASE_URL = 'http://localhost:3000/api';
-const API_BASE_URL = 'http://192.168.137.11:3000/api';
+const API_BASE_URL = 'http://192.168.137.11:3003/api';
 
 
 const EMPTY_USER_DATA = {

@@ -2,31 +2,70 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { BookOpen, Globe, FileText, Library, Award, Building2, ArrowRight } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE LA API ---
-//const API_BASE_URL = 'http://localhost:3000/api/libros';
 const API_BASE_URL = 'http://192.168.137.11:3003/api/libros';
-
 const PDF_API_URL = `${API_BASE_URL}/file/pdf`;
 
 const EMPTY_BOOK_DATA = {
   portadaBase64: 'https://placehold.co/150x220/087990/ffffff?text=LIBRO',
 };
 
-// --- FUNCIÓN AUXILIAR: BASE64 a Blob ---
-const b64toBlob = (b64Data, contentType = '', sliceSize = 512) => {
-  const base64 = b64Data.startsWith('data:') ? b64Data.split(',')[1] : b64Data;
-  const byteCharacters = atob(base64);
-  const byteArrays = [];
-
-  for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-    const slice = byteCharacters.slice(offset, offset + sliceSize);
-    const byteNumbers = new Array(slice.length);
-    for (let i = 0; i < slice.length; i++) {
-      byteNumbers[i] = slice.charCodeAt(i);
+// --- FUNCIÓN AUXILIAR: BASE64 a Blob (CON VALIDACIÓN MEJORADA) ---
+const b64toBlob = (b64Data, contentType = 'application/pdf', sliceSize = 512) => {
+  try {
+    let base64 = b64Data.trim();
+    
+    console.log('[b64toBlob] Longitud recibida:', base64.length);
+    console.log('[b64toBlob] Primeros 100 chars:', base64.substring(0, 100));
+    
+    // Remover prefijo Data URI si existe
+    if (base64.includes('base64,')) {
+      base64 = base64.split('base64,')[1];
+      console.log('[b64toBlob] Removido prefijo Data URI');
+    } else if (base64.startsWith('data:')) {
+      const commaIndex = base64.indexOf(',');
+      if (commaIndex !== -1) {
+        base64 = base64.substring(commaIndex + 1);
+        console.log('[b64toBlob] Removido prefijo Data URI (método alternativo)');
+      }
     }
-    const byteArray = new Uint8Array(byteNumbers);
-    byteArrays.push(byteArray);
+    
+    // Remover espacios en blanco
+    base64 = base64.replace(/\s/g, '');
+    
+    console.log('[b64toBlob] Base64 limpio - Longitud:', base64.length);
+    
+    // Validar formato base64
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) {
+      throw new Error('Cadena base64 contiene caracteres inválidos');
+    }
+    
+    // Validar longitud mínima
+    if (base64.length < 100) {
+      throw new Error('El base64 es demasiado corto para ser un PDF válido');
+    }
+    
+    // Decodificar base64
+    const byteCharacters = atob(base64);
+    const byteArrays = [];
+
+    for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+      const slice = byteCharacters.slice(offset, offset + sliceSize);
+      const byteNumbers = new Array(slice.length);
+      for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      byteArrays.push(byteArray);
+    }
+    
+    const blob = new Blob(byteArrays, { type: contentType });
+    console.log('[b64toBlob] ✓ Blob creado exitosamente - Tamaño:', blob.size, 'bytes');
+    
+    return blob;
+  } catch (error) {
+    console.error('[b64toBlob] ❌ Error al convertir base64 a blob:', error);
+    throw new Error(`No se pudo decodificar el PDF: ${error.message}`);
   }
-  return new Blob(byteArrays, { type: contentType });
 };
 
 // Función para obtener URL de portada
@@ -43,6 +82,7 @@ const getBookCoverUrl = (base64OrUrl) => {
 const Home = () => {
   const [allBooks, setAllBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingPdfId, setLoadingPdfId] = useState(null);
   const [statusMessage, setStatusMessage] = useState(null);
   const [stats, setStats] = useState({
     totalBooks: 0,
@@ -64,6 +104,7 @@ const Home = () => {
   const loadBooks = async () => {
     setIsLoading(true);
     try {
+      // Búsqueda global con filtro vacío (todos los libros)
       const response = await fetch(`${API_BASE_URL}/search?filtro=`);
       if (!response.ok) throw new Error('Error al cargar libros.');
 
@@ -91,7 +132,7 @@ const Home = () => {
     }
   };
 
-  // --- VISUALIZAR PDF ---
+  // --- VISUALIZAR PDF (CORREGIDO) ---
   const handleViewPdf = async (book) => {
     if (!book.id) {
       displayStatus('El libro no tiene un ID válido.', 'warning');
@@ -99,23 +140,41 @@ const Home = () => {
     }
 
     const isExternal = book.isExternal === true;
+    setLoadingPdfId(book.id);
+
+    console.log('[handleViewPdf] 📖 Abriendo PDF:', {
+      id: book.id,
+      titulo: book.titulo,
+      universidad: book.universidadPropietaria,
+      isExternal
+    });
 
     try {
+      // CORRECCIÓN: Usar universidadPropietaria directamente, no extraer de ID
       const params = new URLSearchParams({
         id: book.id.toString(),
-        universidad: book.universidadPropietaria,
+        universidad: book.universidadPropietaria, // ← ESTO ES LO IMPORTANTE
         external: isExternal ? 'true' : 'false',
       });
 
-      const response = await fetch(`${PDF_API_URL}?${params.toString()}`);
+      const fullUrl = `${PDF_API_URL}?${params.toString()}`;
+      console.log('[handleViewPdf] 🌐 URL completa:', fullUrl);
+      console.log('[handleViewPdf] 📋 Parámetros:', {
+        id: book.id.toString(),
+        universidad: book.universidadPropietaria,
+        external: isExternal ? 'true' : 'false'
+      });
+
+      const response = await fetch(fullUrl);
 
       if (!response.ok) {
         let errorMessage = 'PDF no encontrado.';
         try {
           const errorBody = await response.json();
           errorMessage = errorBody.message || errorMessage;
+          console.error('[handleViewPdf] ❌ Error del servidor:', errorBody);
         } catch (e) {
-          console.error('Error al leer respuesta:', e);
+          console.error('[handleViewPdf] ❌ Error al leer respuesta:', e);
         }
         throw new Error(errorMessage);
       }
@@ -123,16 +182,70 @@ const Home = () => {
       const result = await response.json();
       const pdfBase64 = result.pdfBase64;
 
-      if (pdfBase64) {
-        const pdfBlob = b64toBlob(pdfBase64, 'application/pdf');
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        window.open(pdfUrl, '_blank');
-      } else {
+      console.log('[handleViewPdf] ✓ Respuesta recibida:', {
+        tienePdf: !!pdfBase64,
+        longitud: pdfBase64?.length || 0
+      });
+
+      if (!pdfBase64 || pdfBase64.trim().length === 0) {
         displayStatus('El libro no tiene contenido PDF.', 'warning');
+        return;
+      }
+
+      try {
+        // Convertir base64 a blob
+        const pdfBlob = b64toBlob(pdfBase64, 'application/pdf');
+        
+        if (pdfBlob.size === 0) {
+          throw new Error('El PDF generado está vacío (0 bytes)');
+        }
+        
+        console.log('[handleViewPdf] ✓ Blob creado - Tamaño:', pdfBlob.size, 'bytes');
+        
+        // Crear URL del blob
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        console.log('[handleViewPdf] ✓ URL creada:', pdfUrl);
+        
+        // Abrir en nueva ventana
+        const newWindow = window.open(pdfUrl, '_blank', 'noopener,noreferrer');
+        
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+          // Si el popup fue bloqueado, intentar con método alternativo
+          console.warn('[handleViewPdf] ⚠️ Ventana emergente bloqueada, intentando método alternativo...');
+          
+          // Crear un link temporal y hacer click
+          const link = document.createElement('a');
+          link.href = pdfUrl;
+          link.target = '_blank';
+          link.download = `${book.titulo}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          displayStatus('PDF abierto. Si no lo ves, verifica el bloqueador de ventanas emergentes.', 'warning');
+        } else {
+          console.log('[handleViewPdf] ✓✓✓ PDF abierto en nueva ventana');
+          displayStatus('¡PDF abierto exitosamente!', 'success');
+        }
+        
+        // Liberar URL después de 1 minuto
+        setTimeout(() => {
+          URL.revokeObjectURL(pdfUrl);
+          console.log('[handleViewPdf] 🧹 URL liberada');
+        }, 60000);
+        
+      } catch (conversionError) {
+        console.error('[handleViewPdf] ❌ Error al convertir base64:', conversionError);
+        displayStatus(
+          `Error al procesar el PDF: ${conversionError.message}`,
+          'error'
+        );
       }
     } catch (error) {
       displayStatus(`Error al ver el PDF: ${error.message}`, 'error');
-      console.error('Error al ver PDF:', error);
+      console.error('[handleViewPdf] ❌ Error general:', error);
+    } finally {
+      setLoadingPdfId(null);
     }
   };
 
@@ -320,11 +433,20 @@ const Home = () => {
 
                     <button
                       onClick={() => handleViewPdf(book)}
-                      disabled={!book.pdfBase64}
+                      disabled={loadingPdfId === book.id}
                       className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-teal-600 to-cyan-600 text-white text-sm font-bold rounded-lg hover:from-teal-700 hover:to-cyan-700 transition-all shadow-md disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transform hover:scale-105"
                     >
-                      <FileText size={16} />
-                      <span>Leer Ahora</span>
+                      {loadingPdfId === book.id ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Cargando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <FileText size={16} />
+                          <span>Leer Ahora</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>

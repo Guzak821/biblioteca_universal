@@ -64,7 +64,7 @@ export class UsuarioController {
     };
   }
 
-  /**
+  /** 
    * Maneja la petición de obtener todos los usuarios (para CRUD Bibliotecario)
    * Flujo: MVC > DAO
    * Implementa los patrones MVC y DAO

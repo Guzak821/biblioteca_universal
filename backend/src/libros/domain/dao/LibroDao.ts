@@ -60,26 +60,40 @@ export class LibroDao {
   /**
    * Busca libros por filtro (título o género)
    */
-  async searchByFilter(filtro: string): Promise<LibroModel[]> {
-    const entities = await this.libroRepository.find({
-      where: [
-        { titulo: Like(`%${filtro}%`) },
-        { generoLiterario: Like(`%${filtro}%`) },
-      ],
-    });
-
-    return entities.map(
-      (e) =>
-        new LibroModel(
-          e.id,
-          e.titulo,
-          e.generoLiterario,
-          e.portadaBase64,
-          e.pdfBase64,
-          e.universidadPropietaria,
-        ),
-    );
+ /**
+ * Busca libros por filtro (título o género)
+ * MEJORADO: Solo retorna coincidencias cuando hay filtro
+ */
+async searchByFilter(filtro: string): Promise<LibroModel[]> {
+  // Si no hay filtro o está vacío, retornar todos los libros
+  if (!filtro || filtro.trim() === '') {
+    console.log(`[LibroDao] Sin filtro - Retornando todos los libros`);
+    return await this.findAll();
   }
+
+  const filtroLower = filtro.toLowerCase().trim();
+  console.log(`[LibroDao] 🔍 Buscando libros con filtro: "${filtroLower}"`);
+
+  // Obtener todos los libros
+  const todosLosLibros = await this.findAll();
+
+  // Filtrar libros que coincidan con el filtro en título o género
+  const librosCoincidentes = todosLosLibros.filter((libro) => {
+    const tituloMatch = libro.titulo.toLowerCase().includes(filtroLower);
+    const generoMatch = libro.generoLiterario.toLowerCase().includes(filtroLower);
+    
+    return tituloMatch || generoMatch;
+  });
+
+  console.log(`[LibroDao] Libros encontrados: ${librosCoincidentes.length} de ${todosLosLibros.length}`);
+  
+  // Si no hay coincidencias, informar
+  if (librosCoincidentes.length === 0) {
+    console.log(`[LibroDao] ℹ️ No se encontraron libros que coincidan con "${filtroLower}"`);
+  }
+  
+  return librosCoincidentes;
+}
 
   /**
    * Verifica si un libro existe por título
@@ -90,4 +104,5 @@ export class LibroDao {
     });
     return count > 0;
   }
+
 }

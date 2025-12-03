@@ -37,13 +37,23 @@ let LibroDao = class LibroDao {
         return new LibroModel_1.LibroModel(entity.id, entity.titulo, entity.generoLiterario, entity.portadaBase64, entity.pdfBase64, entity.universidadPropietaria);
     }
     async searchByFilter(filtro) {
-        const entities = await this.libroRepository.find({
-            where: [
-                { titulo: (0, typeorm_2.Like)(`%${filtro}%`) },
-                { generoLiterario: (0, typeorm_2.Like)(`%${filtro}%`) },
-            ],
+        if (!filtro || filtro.trim() === '') {
+            console.log(`[LibroDao] Sin filtro - Retornando todos los libros`);
+            return await this.findAll();
+        }
+        const filtroLower = filtro.toLowerCase().trim();
+        console.log(`[LibroDao] 🔍 Buscando libros con filtro: "${filtroLower}"`);
+        const todosLosLibros = await this.findAll();
+        const librosCoincidentes = todosLosLibros.filter((libro) => {
+            const tituloMatch = libro.titulo.toLowerCase().includes(filtroLower);
+            const generoMatch = libro.generoLiterario.toLowerCase().includes(filtroLower);
+            return tituloMatch || generoMatch;
         });
-        return entities.map((e) => new LibroModel_1.LibroModel(e.id, e.titulo, e.generoLiterario, e.portadaBase64, e.pdfBase64, e.universidadPropietaria));
+        console.log(`[LibroDao] Libros encontrados: ${librosCoincidentes.length} de ${todosLosLibros.length}`);
+        if (librosCoincidentes.length === 0) {
+            console.log(`[LibroDao] ℹ️ No se encontraron libros que coincidan con "${filtroLower}"`);
+        }
+        return librosCoincidentes;
     }
     async existsByTitulo(titulo) {
         const count = await this.libroRepository.count({
